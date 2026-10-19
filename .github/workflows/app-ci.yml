@@ -1,5 +1,8 @@
 name: GreenBiz checks
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
 defaults:
   run:
     working-directory: App-Website

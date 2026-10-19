@@ -73,6 +73,8 @@ test('multiple device shops remain isolated across switching and restart', async
   await expect(page.getByRole('button', { name: /Private first item/ })).toHaveCount(0);
   await page.reload();
   await page.getByLabel('Switch active shop').selectOption({ label: 'First branch' });
+  // Switching finishes by routing home; navigating earlier races that redirect.
+  await expect(page).toHaveURL(/#\/home$/);
   await page.goto('/#/stock');
   await expect(page.getByRole('button', { name: /Private first item/ })).toBeVisible();
 });
