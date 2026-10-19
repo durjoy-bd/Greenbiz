@@ -49,3 +49,13 @@ Restores the GreenBiz 1.x features listed in [FEATURES-2.1.md](FEATURES-2.1.md).
 - `gradlew assembleDebug testDebugUnitTest`: build successful; 4 native SMS parser tests passed.
 - APK `GreenBiz-2.1.0.apk`: `com.greenbiz.app`, versionCode 3, versionName 2.1.0, debug-signed for internal testing. SHA-256 `2971ec6d5f8ac7e8238e95c775a9ce2b11ff7a37849fca467556df2bb7147afa`.
 - Not performed: release signing/AAB, Android lint, and physical-device checks of live SMS, notifications, speech and camera. The loan catalogue figures are published terms as of 18 October 2026, not lender quotes.
+
+## GreenBiz 2.2.0 (19 October 2026)
+
+Motion and visual finish; see [MOTION-2.2.md](MOTION-2.2.md). No change to records, sync or calculations.
+
+- Lint, typecheck, web and server builds succeeded. 108 unit/API tests passed.
+- 23 browser journeys passed against this build (ports 5174/8788). A separate check confirmed View Transitions run in Chromium with no console errors across tab and sub-page navigation. Phone-width checks pass at 320 px.
+- `gradlew assembleDebug testDebugUnitTest` succeeded; 4 native parser tests passed.
+- APK `GreenBiz-2.2.0.apk`: versionCode 4, versionName 2.2.0, debug-signed. SHA-256 `2fa204021350fa8f954dfe43de6a4fe3dd5cc5fcdbd696b0cea90602de1bae72`.
+- Not performed: frame-rate profiling or haptics on a physical phone. View Transitions need Android System WebView 111 or newer; older WebViews use the CSS fallback.

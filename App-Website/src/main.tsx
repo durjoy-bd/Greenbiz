@@ -4,6 +4,7 @@ import { StoreProvider } from './data/store';
 import App from './App';
 import { AppExperience } from './components/Experience';
 import './styles.css';
+import './motion.css';
 import '@fontsource/bricolage-grotesque/700.css';
 import '@fontsource/bricolage-grotesque/800.css';
 import '@fontsource/hind-siliguri/400.css';

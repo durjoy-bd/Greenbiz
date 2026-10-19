@@ -3,7 +3,7 @@
 > **Product:** GreenBiz — offline-first small-business app for shops in Bangladesh
 > **Clients:** Android app (Capacitor + React), responsive browser app, public invoice page, bank portal
 > **Backends:** optional cloud portal (Fastify + SQLite) and a managed AI service (Cloudflare Workers + D1)
-> **Version:** 2.1.0
+> **Version:** 2.2.0
 > **Last updated:** 2026-10-19
 > **Audience:** engineers, reviewers, and anyone evaluating the system's correctness, privacy, or security posture
 

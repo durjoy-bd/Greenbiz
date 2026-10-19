@@ -11,8 +11,8 @@ Inventory  →  sale  →  payment SMS  →  linked receipt  →  credit profile
 
 | | |
 |---|---|
-| **Repository** | <https://github.com/noobdurjoy/Greenbiz> |
-| **Download the APK** | [Releases → v2.1.0](https://github.com/noobdurjoy/Greenbiz/releases/tag/v2.1.0) |
+| **Repository** | <https://github.com/durjoy-bd/Greenbiz> |
+| **Download the APK** | [Latest release — v2.2.0](https://github.com/durjoy-bd/Greenbiz/releases/latest) |
 | **Live web demo** | <https://greenbizdemosite.sustgpt.com> |
 | **Managed AI service** | <https://greenbiz-ai-service.dearjelly6.chatgpt.site> |
 | **Technical documentation** | [technicaldoc.md](technicaldoc.md) — architecture, core algorithms, security design |
@@ -75,6 +75,8 @@ self-recorded estimates, not bureau scores or loan approvals.
 | [`App-Website/android/`](App-Website/android/) | Android project, including the native SMS, Keystore and speech plugins |
 | [`Managed-AI-Service/`](Managed-AI-Service/) | The hosted AI service: Cloudflare Workers + D1, quotas and request validation |
 | [`technicaldoc.md`](technicaldoc.md) | Full technical documentation |
+| [`Presentation/`](Presentation/) | Presentation decks (PowerPoint) with speaker notes |
+| [`START-HERE.md`](START-HERE.md) | Short orientation to the two projects |
 | [`.github/workflows/`](.github/workflows/) | CI: lint, typecheck, tests, builds, browser journeys, Android build |
 
 More documentation:
@@ -85,6 +87,7 @@ More documentation:
 - [`App-Website/docs/RELEASE.md`](App-Website/docs/RELEASE.md) — release checklist
 - [`App-Website/docs/VALIDATION.md`](App-Website/docs/VALIDATION.md) — recorded validation results
 - [`App-Website/docs/FEATURES-2.1.md`](App-Website/docs/FEATURES-2.1.md) — features restored from GreenBiz 1.x
+- [`App-Website/docs/MOTION-2.2.md`](App-Website/docs/MOTION-2.2.md) — 2.2 animations, transitions and haptics
 - [`Managed-AI-Service/README.md`](Managed-AI-Service/README.md) — AI service contracts and quotas
 
 ## Requirements
@@ -342,3 +345,7 @@ ship one:
 - **Full Bengali interface.** Bengali text, digits and ৳ display correctly, but
   the interface copy is English.
 - **iOS.** Android only.
+
+## License
+
+GreenBiz is open source under the [MIT License](LICENSE).

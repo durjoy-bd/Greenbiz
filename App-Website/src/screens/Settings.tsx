@@ -286,7 +286,7 @@ export function Settings({ nav }: { nav: Navigate }) {
       <div className="about-greenbiz">
         <Leaf size={18} />
         <b>GreenBiz</b>
-        <span>2.1.0 · Built for your next chapter</span>
+        <span>2.2.0 · Built for your next chapter</span>
       </div>
     </>
   );

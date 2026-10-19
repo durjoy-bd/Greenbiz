@@ -11,7 +11,3 @@
 Thumbs.db
 .vscode/
 .idea/
-
-# Local-only notes (not project documentation)
-/START-HERE.md
-/Managed-AI-Service/TASK-BRIEF.md

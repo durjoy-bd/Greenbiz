@@ -4,7 +4,7 @@ An Android small-business app based on the supplied Puji designs, renamed GreenB
 
 ## Try the Android app
 
-The delivered `GreenBiz-2.1.0.apk` is an installable **internal/testing build**, signed with the local Android debug certificate. Transfer it to your Android phone, open it, and allow installation from that file source if Android asks. It requires Android 6.0 or newer and a current Android System WebView. It has not been installed on your personal phone as part of this build.
+The delivered `GreenBiz-2.2.0.apk` is an installable **internal/testing build**, signed with the local Android debug certificate. Transfer it to your Android phone, open it, and allow installation from that file source if Android asks. It requires Android 6.0 or newer and a current Android System WebView. It has not been installed on your personal phone as part of this build.
 
 - **Create my shop:** an empty, real shop whose stock, sales, payment reviews and settings persist in this app’s private device storage. No account or internet is needed for these tools. Export backups from Settings; uninstalling/clearing app data removes the device shop.
 - **Explore sample shop:** separate fictional reference records. Nothing in this mode verifies a payment, contacts a lender, or changes your own shop.
@@ -13,6 +13,8 @@ The delivered `GreenBiz-2.1.0.apk` is an installable **internal/testing build**,
 The UI supports Bengali text and the taka sign with bundled fonts. Interface copy is currently English; a full Bengali translation is not implemented.
 
 ## What works
+
+New in 2.2: a professional motion system — native page transitions, live drag on swipe-to-confirm and payment rows, spring sheets, counting numbers, animated charts and a success moment after each sale, all switchable to reduced motion. See [2.2 motion](docs/MOTION-2.2.md).
 
 New in 2.1: the GreenBiz 1.x features 2.0 left out are back — mobile-money payment matching with the cash-out charge band, live “Payment received” prompts, sale receipts, the 0–100 credit profile, 39 published bank loan plans matched to your revenue, calendar report periods with best day and top payers, quick restock, Upay and more Bangladeshi SMS formats. See [2.1 restored features](docs/FEATURES-2.1.md).
 
