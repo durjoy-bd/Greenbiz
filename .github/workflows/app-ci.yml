@@ -1,0 +1,51 @@
+name: GreenBiz app checks
+on: [push, pull_request]
+defaults:
+  run:
+    working-directory: App-Website
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: App-Website/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run build:server
+      - run: npm audit --audit-level=high
+      - run: npx playwright install --with-deps chromium
+      - name: Start temporary API
+        run: PUBLIC_ORIGIN=http://127.0.0.1:5173 DATABASE_PATH=./tmp/ci.sqlite npm run server > /tmp/greenbiz-api.log 2>&1 &
+      - run: npx playwright test
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: App-Website/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - run: npm ci
+      - run: npm run android:sync
+      - run: chmod +x android/gradlew
+      - run: cd android && ./gradlew assembleDebug bundleRelease --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GreenBiz-Android-internal
+          path: |
+            App-Website/android/app/build/outputs/apk/debug/*.apk
+            App-Website/android/app/build/outputs/bundle/release/*.aab

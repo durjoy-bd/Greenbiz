@@ -1,0 +1,29 @@
+services:
+  api:
+    build: ..
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PUBLIC_ORIGIN: https://${GREENBIZ_DOMAIN:?Set GREENBIZ_DOMAIN to your real domain}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_VISION_MODEL: ${OPENAI_VISION_MODEL:-}
+    volumes:
+      - business_data:/data
+    networks: [greenbiz]
+  web:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      GREENBIZ_DOMAIN: ${GREENBIZ_DOMAIN:?Set GREENBIZ_DOMAIN to your real domain}
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../dist:/srv:ro
+      - certificates:/data
+    networks: [greenbiz]
+    depends_on: [api]
+volumes:
+  business_data:
+  certificates:
+networks:
+  greenbiz:

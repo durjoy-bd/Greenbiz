@@ -1,0 +1,51 @@
+# GreenBiz 2.0 validation — 19 October 2026
+
+## Executed checks
+
+| Check | Result |
+| --- | --- |
+| App domain/API/backup/client tests | 79 passed across 10 files |
+| Managed AI service tests | 24 passed; actual SQLite schema/SQL, controlled provider transport |
+| Browser journeys | 17 passed; final full run 1.3 minutes |
+| TypeScript / ESLint | Passed; zero app lint warnings |
+| Production web/server bundles | Built successfully |
+| Android | Debug APK, release AAB, three JVM SMS parser tests and lintDebug passed |
+| APK identity | GreenBiz, com.greenbiz.app, version 2.0.0 / code 2; min API 23, target/compile API 36 |
+| Signing | APK debug signature verified; AAB unsigned |
+| Dependency audit | Production dependencies: zero reported vulnerabilities |
+| Visual review | 14 screenshots, no browser page errors; phone finance and sale layouts reviewed |
+| Responsive checks | Existing and new screens fit 320/390px; desktop 1440px reviewed |
+| APK secret check | Managed HTTPS origin bundled; no OpenRouter secret pattern in bundled JavaScript |
+
+Browser journeys cover device persistence, isolated shops, SMS receipt linking to fractional sales, expenses/reports, lost-response exact-once replay, offline restart, conflict export/discard, expired-session reconnect, uncached failed branch switching, fractional decrement, reduced motion, account deletion/cache purge, late old-shop success/error isolation, draft isolation, serialized writes, authentication and public invoice corrected-reference/manual-review behavior.
+
+App tests cover money/quantities, stock atomicity, multi-shop ownership and migration 4, transactions/currencies/linking and hashed retry metadata, sync envelopes/stable IDs/timestamps, parser filtering, report calculations, borrowing assumptions, managed client request scope, authentication, bank consent/offers/interest/document requests and consistent WAL backups. Provider adapter tests use controlled responses.
+
+Managed service tests cover strict enrollment/auth/task contracts, hashed credentials, fixed provider/model/endpoint, request claim replay/concurrency, per-device/global/IP limits, rejected-request storage abuse, UTC rollover, fail-closed configuration/database behavior, 45-second timeout, request/output bounds, structured sale/stock validation, credential echo rejection and safe upstream error categories. Independent final review approved original store/replay/rounding corrections and the quota fix.
+
+## Managed AI deployment and live verification
+
+Public service: https://greenbiz-ai-service.dearjelly6.chatgpt.site
+
+The owner key/model/provider are hosted secrets; no provider credential is in application source or the APK. Saved service version 4, source 5b57b15374e8ebbc2cb77db3e7d921c884c548e1, deployment appgdep_6ad590999780819181b6d56aa1dbd743: publication succeeded with environment revision 1 and D1 migration applied. Anonymous Android-origin health and enrollment returned 200 with matching CORS. Health reports configured/migrated readiness and does not assert a successful model request. After correcting an actual Workers runtime incompatibility (unsupported redirect:error), live advice, sale and stock requests all returned 200 with the requested Gemini 3.8 Flash / Flex route and Android-origin CORS. Advice used fictional aggregates, sale matching returned the supplied demo-rice ID at 1.5 kg, and a blank 1 px PNG returned an empty products list. This validates the live image pipeline, not product-recognition accuracy on real shop photos. The app preserves manual/offline tools when AI is unavailable. An actual workerd transport regression and 301/302/307/308 rejection coverage now guard the correction.
+
+## Boundaries
+
+- No installation on the user's phone or physical-device SMS, notifications, speech, camera/gallery, keyboard/insets, secure-storage lifecycle, low-storage or accessibility-service checks.
+- APK is an internal/testing build. Owner release signing and Play submission have not been performed; SMS permissions need store eligibility review.
+- Optional bank/cloud business portal and Docker templates were not publicly deployed. Its real accounts/invoices require owner operation; normal Android shops need no business server.
+- No official bKash verification, bank/insurer partnership, mail recovery delivery, loan approval or disbursement is claimed. SMS/claims/manual review are not provider-authoritative payment verification.
+- Full Bengali UI translation, automatic export import/merge and device-to-server migration are not implemented. Back up device exports before uninstall/clear-data.
+
+Nonfatal generated Capacitor/Gradle deprecation/flatDir warnings, APK META-INF signature warnings and Vite mixed-import notices remain. Android lint completed successfully. No physical-device performance guarantee is inferred from workstation tests.
+
+## GreenBiz 2.1.0 (19 October 2026)
+
+Restores the GreenBiz 1.x features listed in [FEATURES-2.1.md](FEATURES-2.1.md).
+
+- `npm run lint`, `npm run typecheck`, `npm run build` and `npm run build:server` succeeded.
+- `npm test`: 108 unit/API tests passed (13 files).
+- `npx playwright test`: 23 browser journeys passed against this build's Vite and API servers on ports 5174/8788 (`GREENBIZ_DEV_PORT`, `GREENBIZ_API_ORIGIN`).
+- `gradlew assembleDebug testDebugUnitTest`: build successful; 4 native SMS parser tests passed.
+- APK `GreenBiz-2.1.0.apk`: `com.greenbiz.app`, versionCode 3, versionName 2.1.0, debug-signed for internal testing. SHA-256 `2971ec6d5f8ac7e8238e95c775a9ce2b11ff7a37849fca467556df2bb7147afa`.
+- Not performed: release signing/AAB, Android lint, and physical-device checks of live SMS, notifications, speech and camera. The loan catalogue figures are published terms as of 18 October 2026, not lender quotes.

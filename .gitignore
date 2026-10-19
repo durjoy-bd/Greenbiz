@@ -1,0 +1,17 @@
+# Release binaries are published as GitHub Releases, not committed
+*.apk
+*.apk.sha256
+*.aab
+
+# Generated TypeScript build state
+*.tsbuildinfo
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local-only notes (not project documentation)
+/START-HERE.md
+/Managed-AI-Service/TASK-BRIEF.md

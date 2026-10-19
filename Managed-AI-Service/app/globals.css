@@ -1,0 +1,37 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "../vendor/shadcn-tailwind-4.13.0.css";
+
+:root { color-scheme: light; --background:#f7f7ef; --foreground:#153d31; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--background); color:var(--foreground); font-family:Arial,Helvetica,sans-serif; }
+.greenbiz-page { max-width:1440px; margin:auto; padding:0 7%; }
+.gb-header { display:flex; align-items:center; justify-content:space-between; padding:32px 0; border-bottom:1px solid #d9dfd2; }
+.gb-wordmark { display:flex; align-items:center; gap:10px; color:#164e3b; text-decoration:none; font-weight:750; font-size:25px; letter-spacing:-1px; }
+.gb-mark { display:grid; place-items:center; background:#145641; color:#e8f0bb; width:35px; height:39px; border-radius:12px 12px 12px 3px; font-family:Georgia,serif; font-size:34px; padding-bottom:8px; }
+.gb-service-label { margin-left:12px; border-left:1px solid #cdd5c7; padding-left:20px; font-size:10px; letter-spacing:1.6px; font-weight:600; }
+.gb-header-note { font-size:12px; color:#5a6e60; }
+.gb-hero { display:grid; grid-template-columns:1.2fr 1fr; gap:60px; align-items:center; min-height:570px; padding:70px 0 65px; }
+.gb-eyebrow { color:#467052; font-size:10px; font-weight:700; letter-spacing:2px; margin:0 0 24px; }
+h1 { font-family:Georgia,'Times New Roman',serif; font-weight:400; font-size:clamp(44px,4.9vw,70px); line-height:1.09; letter-spacing:-2.9px; margin:0 0 25px; }
+.gb-lead { max-width:480px; color:#5c6b5e; font-size:16px; line-height:1.8; margin:0 0 30px; }
+.service-status { display:inline-flex; align-items:center; gap:9px; background:#e8eddd; border:1px solid #d9e1ca; border-radius:30px; padding:10px 15px; font-size:12px; font-weight:600; }
+.status-dot { width:7px; height:7px; border-radius:50%; background:#8c966c; }
+.status-dot.ready { background:#2b8055; }.status-dot.unavailable { background:#9a6838; }
+.gb-status-note { font-size:10px; line-height:1.6; color:#65715f; max-width:360px; margin:12px 0 0; }
+.gb-illustration { position:relative; display:grid; place-items:center; min-height:400px; }
+.gb-orbit { position:absolute; width:355px; height:355px; border-radius:50%; background:#e7edc8; border:26px solid #edf1db; }
+.gb-receipt { position:relative; background:#fffef5; width:265px; padding:27px; box-shadow:0 22px 50px #24463215; transform:rotate(-7deg); border:1px solid #e1e5d4; border-bottom:5px dotted #d2d9b9; }
+.gb-receipt-top { display:block; font-size:8px; font-weight:700; letter-spacing:1.3px; color:#728064; }
+.gb-receipt-icon { width:42px; height:42px; margin:22px 0 14px; display:grid; place-items:center; background:#e6edcf; color:#477447; font-size:26px; border-radius:12px; }
+.gb-receipt-title { display:block; font-family:Georgia,serif; font-size:29px; line-height:1.2; }
+.gb-receipt-bars { height:80px; display:flex; align-items:flex-end; gap:9px; margin:23px 0; }
+.gb-receipt-bars i { flex:1; background:#bdce97; height:25%; border-radius:5px 5px 0 0; }.gb-receipt-bars i:nth-child(2){height:42%}.gb-receipt-bars i:nth-child(3){height:38%}.gb-receipt-bars i:nth-child(4){height:62%}.gb-receipt-bars i:nth-child(5){height:73%}.gb-receipt-bars i:nth-child(6){height:95%;background:#2b694a}
+.gb-receipt-foot { border-top:1px dashed #ccd6b8; padding-top:16px; display:flex; justify-content:space-between; font-size:10px; color:#6d7e63; }
+.gb-float { position:absolute; bottom:4px; right:0; background:#1b5540; color:#e4edc2; border-radius:10px; padding:18px 20px; transform:rotate(3deg); font-size:20px; box-shadow:0 12px 25px #16442a15; }.gb-float span { font-size:11px; padding-left:8px; }
+.gb-tools { display:grid; grid-template-columns:repeat(3,1fr); gap:42px; border-top:1px solid #d9dfd2; border-bottom:1px solid #d9dfd2; padding:35px 0; }.gb-tools article + article { border-left:1px solid #d9dfd2; padding-left:36px; }
+.gb-tool-number { font-size:9px; letter-spacing:1.6px; font-weight:700; color:#687d5f; }.gb-tools h2 { font-family:Georgia,serif; font-weight:400; font-size:24px; letter-spacing:-.5px; margin:16px 0 10px; }.gb-tools p { color:#667362; line-height:1.8; font-size:12px; max-width:270px; margin:0; }
+.gb-privacy { display:flex; align-items:flex-start; gap:16px; max-width:740px; margin:45px auto; }.gb-privacy>span { display:grid; place-items:center; flex-shrink:0; width:37px; height:37px; border:1px solid #cad7b9; border-radius:50%; font-size:27px; color:#58784c; }.gb-privacy h2 { font-size:13px; margin:1px 0 8px; font-weight:600; }.gb-privacy p { font-size:11px; line-height:1.8; color:#667362; margin:0; }
+.gb-footer { display:flex; justify-content:space-between; gap:20px; color:#74806b; font-size:10px; border-top:1px solid #d9dfd2; padding:23px 0 30px; }
+@media(max-width:800px) { .greenbiz-page{padding:0 6%}.gb-header{padding:22px 0}.gb-header-note{display:none}.gb-hero{grid-template-columns:1fr;gap:15px;padding:46px 0;min-height:0}.gb-lead{font-size:15px}.gb-illustration{min-height:365px}.gb-orbit{width:310px;height:310px}.gb-receipt{width:235px;padding:24px}.gb-float{bottom:0;right:4%;padding:15px}.gb-tools{gap:22px}.gb-tools article+article{padding-left:20px}.gb-tools h2{font-size:21px}.gb-footer{flex-direction:column;gap:10px} }
+@media(max-width:540px) { .gb-service-label{font-size:8px;margin-left:4px;padding-left:12px}.gb-tools{grid-template-columns:1fr;gap:0;padding:10px 0}.gb-tools article{padding:25px 0}.gb-tools article+article{border-left:0;border-top:1px solid #d9dfd2;padding-left:0}.gb-tools p{max-width:100%}.gb-tools h2{font-size:25px}.gb-privacy{margin:32px 0} }

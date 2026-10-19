@@ -1,0 +1,16 @@
+{$GREENBIZ_DOMAIN} {
+    encode gzip
+    handle /api/* {
+        reverse_proxy api:8787
+    }
+    handle {
+        root * /srv
+        try_files {path} /index.html
+        file_server
+    }
+    header {
+        Referrer-Policy "no-referrer"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+    }
+}
