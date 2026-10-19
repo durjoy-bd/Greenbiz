@@ -1,0 +1,40 @@
+name: Bug report
+description: Something in the app, website, admin console or server is not working.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Please remove phone numbers, TrxIDs, customer names and passwords from anything you paste. Report security problems privately (see SECURITY.md).
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where
+      options: [Android app, Website, Admin console, API server, VPS deployment, Managed AI service]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Settings shows it at the bottom; the admin console shows it under System.
+      placeholder: 2.3.0
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open Stock\n2. Tap Sell\n3. …"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected and what happened
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device / browser
+      placeholder: POCO F3, Android 13 · or Chrome 141 on Windows

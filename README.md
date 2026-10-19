@@ -1,5 +1,9 @@
 # GreenBiz — Small Business Copilot for Bangladesh
 
+[![GreenBiz checks](https://github.com/durjoy-bd/Greenbiz/actions/workflows/app-ci.yml/badge.svg)](https://github.com/durjoy-bd/Greenbiz/actions/workflows/app-ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/durjoy-bd/Greenbiz?label=release&color=0e5a43)](https://github.com/durjoy-bd/Greenbiz/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-f2a53a)](LICENSE)
+
 An Android app for small shop owners in Bangladesh. It manages inventory and
 sales, turns mobile-money SMS (bKash, Nagad, Rocket, Upay) into structured
 records **on the phone**, and builds an explainable credit profile that is
@@ -16,6 +20,7 @@ Inventory  →  sale  →  payment SMS  →  linked receipt  →  credit profile
 | **Live web demo** | <https://greenbizdemosite.sustgpt.com> |
 | **Managed AI service** | <https://greenbiz-ai-service.dearjelly6.chatgpt.site> |
 | **Technical documentation** | [technicaldoc.md](technicaldoc.md) — architecture, core algorithms, security design |
+| **Project** | [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md) · [Admin console & deployment](App-Website/docs/ADMIN-2.3.md) |
 
 ## What it does
 

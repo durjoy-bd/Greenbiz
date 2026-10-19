@@ -1,0 +1,45 @@
+name: Release bundles
+# Attaches the static website and the VPS package to a published release.
+# The APK is uploaded from the release machine so it keeps the same signing key.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to attach bundles to (e.g. v2.3.0)
+        required: true
+permissions:
+  contents: write
+jobs:
+  bundles:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    defaults:
+      run:
+        working-directory: App-Website
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: App-Website/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - name: Build the website and the VPS package
+        run: npm run package:vps
+      - name: Zip the bundles
+        run: |
+          VERSION="${TAG#v}"
+          (cd dist && zip -qr "../GreenBiz-${VERSION}-website.zip" .)
+          (cd deploy/vps && cp .env.example env.example && zip -qr "../../GreenBiz-${VERSION}-vps.zip" compose.yml Caddyfile deploy.sh README.md env.example build && rm env.example)
+          sha256sum "GreenBiz-${VERSION}-website.zip" "GreenBiz-${VERSION}-vps.zip" > "GreenBiz-${VERSION}-bundles.sha256"
+      - name: Attach to the release
+        run: |
+          VERSION="${TAG#v}"
+          gh release upload "$TAG" "GreenBiz-${VERSION}-website.zip" "GreenBiz-${VERSION}-vps.zip" "GreenBiz-${VERSION}-bundles.sha256" --clobber --repo "$GITHUB_REPOSITORY"

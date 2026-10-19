@@ -1,0 +1,26 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /App-Website
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # Capacitor is pinned for the Java 17 toolchain; upgrade deliberately.
+      - dependency-name: "@capacitor/*"
+        update-types: [version-update:semver-major]
+  - package-ecosystem: npm
+    directory: /Managed-AI-Service
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
