@@ -9,7 +9,9 @@ import { z } from 'zod';
 import { applyAction, businessDate, createWorkspace, creditScore, dashboard, multiplyMoney } from '../shared/domain';
 import type { Action, BusinessProfile, Offer, Payment, Session, User, Workspace } from '../shared/types';
 import { openDatabase, readWorkspace, transaction, writeWorkspace } from './store';
-import { amountSchema, emailSchema, loginSchema, registerSchema, shortText, trxSchema } from './validation';
+import { ApiError } from './errors';
+import { registerAdmin } from './admin-routes';
+import { amountSchema, emailSchema, loginSchema, passwordSchema, registerSchema, shortText, trxSchema } from './validation';
 
 export interface AppOptions {
   dbPath?: string;
@@ -20,11 +22,12 @@ export interface AppOptions {
   openaiApiKey?: string;
   openaiModel?: string;
   fetchImpl?: typeof fetch;
+  /** Explicit opt-in to serve production over plain HTTP (an IP-only test deployment). */
+  allowInsecureHttp?: boolean;
 }
 type UserRow = User & { password_hash: string; session_hash?: string };
 interface Invoice { id: string; customer: string; shop: { name: string; location: string; bkash: string }; items: { name: string; quantity: number; price: number }[]; delivery: number; total: number; }
 interface OrderRow { token: string; user_id: string; document: string; payment_id: string | null; created_at: string; }
-class ApiError extends Error { constructor(readonly statusCode: number, message: string) { super(message); } }
 const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex');
 const fingerprint = (value: unknown) => tokenHash(stableJson(value));
 function stableJson(value: unknown): string {
@@ -34,6 +37,7 @@ function stableJson(value: unknown): string {
   return `{${Object.keys(object).sort().map(key => `${JSON.stringify(key)}:${stableJson(object[key])}`).join(',')}}`;
 }
 const dummyHash = hash(randomBytes(32).toString('hex'), 12);
+const suspended = 'This account is suspended. Contact the GreenBiz administrator.';
 const publicUser = (user: User): User => ({ id: user.id, email: user.email, role: user.role });
 const nativeRequest = (request: FastifyRequest) => request.headers['x-greenbiz-client'] === 'native';
 const orderSchema = z.object({ customer: shortText(120).min(1), items: z.array(z.object({ name: shortText(120).min(1), quantity: z.number().finite().min(0.001).max(1_000_000).refine(value => Math.round(value * 1000) / 1000 === value, 'Use at most three decimal places'), price: amountSchema }).strict()).min(1).max(200), delivery: amountSchema }).strict();
@@ -47,7 +51,10 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
   let parsedOrigin: URL;
   try { parsedOrigin = new URL(publicOrigin); } catch { throw new Error('PUBLIC_ORIGIN must be an absolute HTTPS origin in production'); }
   if (!['http:', 'https:'].includes(parsedOrigin.protocol) || parsedOrigin.origin !== publicOrigin || parsedOrigin.username || parsedOrigin.password) throw new Error('PUBLIC_ORIGIN must contain only the HTTP(S) origin');
-  if (production && parsedOrigin.protocol !== 'https:') throw new Error('Production PUBLIC_ORIGIN must use HTTPS');
+  const allowInsecureHttp = options.allowInsecureHttp ?? process.env.ALLOW_INSECURE_HTTP === 'true';
+  if (production && parsedOrigin.protocol !== 'https:' && !allowInsecureHttp) throw new Error('Production PUBLIC_ORIGIN must use HTTPS');
+  // Cookies are Secure whenever the site is served over HTTPS.
+  const secureCookies = production && parsedOrigin.protocol === 'https:';
   const now = options.now ?? (() => new Date());
   const ttl = options.sessionTtlSeconds ?? 60 * 60 * 24 * 7;
   if (!Number.isInteger(ttl) || ttl < 60 || ttl > 60 * 60 * 24 * 30) throw new Error('Session TTL must be between 60 seconds and 30 days');
@@ -88,8 +95,9 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     // Native webview origins are never permitted to authenticate using a web cookie.
     if (request.headers.origin && nativeOrigins.has(request.headers.origin) && !authorization) throw new ApiError(403, 'Native clients must use bearer authentication.');
     const sessionHash = tokenHash(raw);
-    const user = db.prepare('SELECT u.id,u.email,u.role,u.password_hash FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>?').get(sessionHash, now().getTime()) as UserRow | undefined;
+    const user = db.prepare('SELECT u.id,u.email,u.role,u.password_hash,u.disabled_at FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>?').get(sessionHash, now().getTime()) as (UserRow & { disabled_at: string | null }) | undefined;
     if (!user) throw new ApiError(401, 'Sign in to continue.');
+    if (user.disabled_at) throw new ApiError(403, suspended);
     if (role && user.role !== role) throw new ApiError(403, 'This account cannot access this resource.');
     return { ...user, session_hash: sessionHash };
   }
@@ -98,10 +106,10 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     db.prepare('DELETE FROM sessions WHERE expires_at<=?').run(now().getTime());
     db.prepare('INSERT INTO sessions(token_hash,user_id,created_at,expires_at) VALUES(?,?,?,?)').run(tokenHash(token), user.id, now().getTime(), now().getTime() + ttl * 1000);
     if (nativeRequest(request)) return { user: publicUser(user), token };
-    reply.setCookie('greenbiz_session', token, { path: '/', httpOnly: true, sameSite: 'strict', secure: production, maxAge: ttl });
+    reply.setCookie('greenbiz_session', token, { path: '/', httpOnly: true, sameSite: 'strict', secure: secureCookies, maxAge: ttl });
     return { user: publicUser(user) };
   }
-  function clearSession(reply: FastifyReply): void { reply.clearCookie('greenbiz_session', { path: '/', httpOnly: true, sameSite: 'strict', secure: production }); }
+  function clearSession(reply: FastifyReply): void { reply.clearCookie('greenbiz_session', { path: '/', httpOnly: true, sameSite: 'strict', secure: secureCookies }); }
   function ownedShops(ownerId: string): { id: string }[] {
     return db.prepare('SELECT id FROM shops WHERE owner_id=? ORDER BY CASE WHEN id=? THEN 0 ELSE 1 END,created_at,id').all(ownerId, ownerId) as { id: string }[];
   }
@@ -168,8 +176,11 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     } catch { throw new ApiError(502, 'The AI provider returned an invalid response.'); }
   }
 
-  app.get('/api/health', async () => ({ status: 'ok', ai: Boolean(apiKey && model), bkashVerification: false, passwordRecovery: false, persistence: 'sqlite' }));
-  const authLimit = { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } };
+  app.get('/api/health', async () => ({ status: 'ok', ai: Boolean(apiKey && model), bkashVerification: false, passwordRecovery: false, persistence: 'sqlite', transport: parsedOrigin.protocol === 'https:' ? 'https' : 'http' }));
+  // Production keeps 10 sign-in/sign-up attempts per 15 minutes; test servers may raise it.
+  const authMax = Number(process.env.AUTH_RATE_LIMIT_MAX ?? 10);
+  if (!Number.isInteger(authMax) || authMax < 1 || authMax > 1000) throw new Error('AUTH_RATE_LIMIT_MAX must be an integer from 1 to 1000');
+  const authLimit = { config: { rateLimit: { max: authMax, timeWindow: '15 minutes' } } };
   app.post('/api/auth/register', authLimit, async (request, reply) => {
     const data = registerSchema.parse(request.body);
     const passwordHash = await hash(data.password, 12);
@@ -186,9 +197,11 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
   });
   app.post('/api/auth/login', authLimit, async (request, reply) => {
     const data = loginSchema.parse(request.body);
-    const user = db.prepare('SELECT id,email,role,password_hash FROM users WHERE email=?').get(data.email) as UserRow | undefined;
+    const user = db.prepare('SELECT id,email,role,password_hash,disabled_at FROM users WHERE email=?').get(data.email) as (UserRow & { disabled_at: string | null }) | undefined;
     const valid = await compare(data.password, user?.password_hash ?? await dummyHash);
     if (!user || !valid) throw new ApiError(401, 'Invalid email or password.');
+    if (user.disabled_at) throw new ApiError(403, suspended);
+    db.prepare('UPDATE users SET last_login_at=? WHERE id=?').run(now().toISOString(), user.id);
     return issueSession(request, reply, user);
   });
   app.get('/api/auth/me', async request => ({ user: publicUser(authenticate(request)) }));
@@ -200,6 +213,18 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     if (!await compare(data.password, user.password_hash)) throw new ApiError(401, 'Invalid credentials.');
     transaction(db, () => { db.prepare('DELETE FROM users WHERE id=?').run(user.id); });
     clearSession(reply); return { ok: true };
+  });
+  app.post('/api/auth/password', authLimit, async (request, reply) => {
+    const user = authenticate(request);
+    const data = z.object({ current: z.string().min(1).max(256), password: passwordSchema }).strict().parse(request.body);
+    if (!await compare(data.current, user.password_hash)) throw new ApiError(401, 'Your current password is not correct.');
+    const passwordHash = await hash(data.password, 12);
+    transaction(db, () => {
+      db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(passwordHash, user.id);
+      // Every other device signs out; this one keeps a fresh session.
+      db.prepare('DELETE FROM sessions WHERE user_id=?').run(user.id);
+    });
+    return issueSession(request, reply, user);
   });
   app.post('/api/auth/forgot-password', authLimit, async request => {
     z.object({ email: emailSchema }).strict().parse(request.body);
@@ -378,5 +403,6 @@ export async function buildApp(options: AppOptions = {}): Promise<FastifyInstanc
     const message = await chat([{ role: 'system', content: 'You are GreenBiz, a helpful small-business assistant in Bangladesh. Respond briefly in the language used. These are self-recorded aggregates, not provider verified. Explain assumptions. Never promise or imply lender approval, verified payments, money movement or certainty. Do not invent records. No customer names, products, transaction references, phone numbers or owner email are included. Aggregate context: ' + JSON.stringify(aggregate) }, { role: 'user', content: data.message }]);
     return { message };
   });
+  registerAdmin(app, { db, now, secureCookies, ttl, dbPath: options.dbPath ?? process.env.DATABASE_PATH ?? './data/greenbiz.sqlite', publicOrigin, aiConfigured: Boolean(apiKey && model) });
   return app;
 }

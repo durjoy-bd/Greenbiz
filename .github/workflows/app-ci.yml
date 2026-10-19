@@ -24,9 +24,15 @@ jobs:
       - run: npm run build:server
       - run: npm audit --audit-level=high
       - run: npx playwright install --with-deps chromium
+      - name: Create a test administrator
+        run: GREENBIZ_ADMIN_EMAIL=ci-admin@example.test GREENBIZ_ADMIN_PASSWORD='Ci-Admin-pass-42!' DATABASE_PATH=./tmp/ci.sqlite npx tsx server/admin.ts create-admin
       - name: Start temporary API
-        run: PUBLIC_ORIGIN=http://127.0.0.1:5173 DATABASE_PATH=./tmp/ci.sqlite npm run server > /tmp/greenbiz-api.log 2>&1 &
+        # The throwaway CI server allows more sign-ups than production's 10 per 15 minutes.
+        run: AUTH_RATE_LIMIT_MAX=100 PUBLIC_ORIGIN=http://127.0.0.1:5173 DATABASE_PATH=./tmp/ci.sqlite npm run server > /tmp/greenbiz-api.log 2>&1 &
       - run: npx playwright test
+        env:
+          E2E_ADMIN_EMAIL: ci-admin@example.test
+          E2E_ADMIN_PASSWORD: Ci-Admin-pass-42!
   android:
     runs-on: ubuntu-latest
     steps:

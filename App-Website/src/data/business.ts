@@ -1,5 +1,7 @@
 import { registerPlugin, type PluginListenerHandle } from '@capacitor/core';
 import { z } from 'zod';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { bytesToHex } from '@noble/hashes/utils.js';
 import type { FinancialTransaction, Product, Workspace } from '../../shared/types';
 import { financeReport, monthlyBusinessRevenue, periodDates } from '../../shared/finance';
 import { creditProfile } from '../../shared/credit-profile';
@@ -71,14 +73,7 @@ function assertAiScope(expected: string) {
   if (expected !== scope) throw new Error('The active account changed. Open this feature again.');
 }
 async function settingsKey() {
-  return (
-    'ai' +
-    Array.from(
-      new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(scope))),
-    )
-      .map((x) => x.toString(16).padStart(2, '0'))
-      .join('')
-  );
+  return 'ai' + bytesToHex(sha256(new TextEncoder().encode(scope)));
 }
 export async function aiConfig(): Promise<AiConfig> {
   const id = await settingsKey();

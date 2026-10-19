@@ -12,7 +12,7 @@ Inventory  →  sale  →  payment SMS  →  linked receipt  →  credit profile
 | | |
 |---|---|
 | **Repository** | <https://github.com/durjoy-bd/Greenbiz> |
-| **Download the APK** | [Latest release — v2.2.0](https://github.com/durjoy-bd/Greenbiz/releases/latest) |
+| **Download the APK** | [Latest release — v2.3.0](https://github.com/durjoy-bd/Greenbiz/releases/latest) |
 | **Live web demo** | <https://greenbizdemosite.sustgpt.com> |
 | **Managed AI service** | <https://greenbiz-ai-service.dearjelly6.chatgpt.site> |
 | **Technical documentation** | [technicaldoc.md](technicaldoc.md) — architecture, core algorithms, security design |
@@ -61,6 +61,19 @@ the instalment stays under half of monthly revenue, and labels each as
 **AI that needs no key.** Product photos, sale sentences and business advice go
 to GreenBiz's managed AI service. Users never enter a key or run a server. Every
 suggestion is a draft to review, and advice only ever sees totals.
+
+**Accounts and an admin console.** On a GreenBiz server, shop owners sign up and
+sign in from the website (or the app once the server has HTTPS), and their records
+sync across devices. Platform administrators get a separate console at `/#/admin`:
+platform totals and 30-day charts, every shop with its full stock, sales, payments
+and activity, account suspension, password resets, sign-out-everywhere, bank users
+and more administrators. Every administrator sign-in, record view, export and
+account change is written to an audit log, and shop owners are told at sign-up
+that administrators can see their records.
+
+**Static website.** `npm run build` produces a folder that runs from any static
+host or sub-folder with no server: shops are saved in the browser. Served by a
+GreenBiz server, the same files add accounts and the admin console.
 
 **Honest by design.** A TrxID is a customer's claim, not proof of payment, and
 nothing in the app can mark a payment *verified*. Scores are labelled
@@ -246,7 +259,21 @@ sudo -u greenbiz env DATABASE_PATH=/var/lib/greenbiz/greenbiz.sqlite \
   node server-dist/backup.js /var/backups/greenbiz-$(date +%F).sqlite
 ```
 
-### 3. Cloud portal — Docker alternative
+### 3. Cloud portal — shared VPS with Docker (recommended)
+
+A self-contained stack for a VPS that already hosts other sites: two memory-capped
+containers (Caddy for the website, Node 24 for the API) on one spare port, with no
+`npm install` on the server, nightly verified backups and a one-command update:
+
+```bash
+cd App-Website
+./deploy/vps/deploy.sh <ssh-host>     # builds, uploads, restarts, checks health
+```
+
+First-time setup, creating the first administrator, backups, restore and switching
+on HTTPS are covered in [App-Website/deploy/vps/README.md](App-Website/deploy/vps/README.md).
+
+### 4. Cloud portal — single-host Docker with a domain
 
 ```bash
 cd App-Website
@@ -258,7 +285,7 @@ GREENBIZ_DOMAIN=greenbiz.example.com docker compose up -d --build
 Caddy obtains the TLS certificate, serves `dist/` and proxies `/api` to the API
 container. Data lives in the `business_data` volume.
 
-### 4. Managed AI service (optional — the app already uses the hosted one)
+### 5. Managed AI service (optional — the app already uses the hosted one)
 
 ```bash
 cd Managed-AI-Service
@@ -281,9 +308,10 @@ Run everything:
 cd App-Website
 npm run lint                  # ESLint, zero warnings
 npm run typecheck             # strict TypeScript
-npm test                      # 108 unit and API tests
+npm test                      # 116 unit and API tests
 npx playwright install chromium
-npm run test:ui               # 23 browser journeys (API from Quick start must be running)
+npm run test:ui               # 25 browser journeys (API from Quick start must be running;
+                              # set E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD for the 2 admin journeys)
 cd android
 .\gradlew.bat testDebugUnitTest   # 4 native SMS parser tests
 
@@ -291,12 +319,13 @@ cd ..\..\Managed-AI-Service
 npm test                      # 24 AI service tests
 ```
 
-Results on 2026-10-19: **159 tests, all passing** — 108 unit/API and 24 AI
-service tests run locally; 23 browser journeys and 4 native tests run on GitHub
-Actions.
+Results on 2026-10-19 (v2.3.0): **169 tests, all passing**: 116 unit/API,
+25 browser journeys (including the admin console), 4 native SMS parser tests and
+24 AI service tests.
 
 | Suite | Tests | What it proves |
 |---|---:|---|
+| `server/admin.test.ts` | 8 | Administrators are separate from shop owners; every shop is visible with full records; views and changes are audited; suspension, password reset, deletion confirmation, bank users, owner password change, HTTP only by explicit opt-in |
 | `shared/domain.test.ts` | 27 | Sales are atomic; a retried sale never takes stock twice; reused request IDs are refused; money rounds exactly; dates use Dhaka time; receipts link only inside the cash-out band |
 | `shared/sms.test.ts` | 14 | The received amount is picked, never the balance; Bengali digits and Bangla wording parse; only exact short codes are trusted; the same payment imports once |
 | `shared/loans.test.ts` | 13 | EMI and its inverse are correct; suggested amounts stay under half of revenue and inside a real product band; the 39-product catalogue loads |

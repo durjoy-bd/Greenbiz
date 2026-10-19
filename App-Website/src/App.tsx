@@ -39,6 +39,7 @@ import { Bank } from './screens/Bank';
 import { Finance } from './screens/Finance';
 import { Transactions } from './screens/Transactions';
 import { LivePayment } from './components/LivePayment';
+import { AdminApp } from './screens/Admin';
 import { businessTools } from './data/business';
 import { transition, type NavDirection } from './components/Experience';
 /** Pages opened from a tab; moving into one slides forward, leaving it slides back. */
@@ -155,6 +156,13 @@ export default function App() {
       )}
     </>
   );
+  if (current.page === 'admin')
+    return (
+      <>
+        {alerts}
+        <AdminApp />
+      </>
+    );
   if (current.page === 'pay')
     return (
       <>

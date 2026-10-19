@@ -1,6 +1,6 @@
 {
   "name": "greenbiz",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,7 +14,9 @@
     "postinstall": "node scripts/patch-capacitor.cjs",
     "build:server": "esbuild server/index.ts server/admin.ts server/backup.ts --bundle --platform=node --format=esm --packages=external --outdir=server-dist && node scripts/copy-migrations.cjs",
     "server:prod": "node server-dist/index.js",
-    "test:ui": "playwright test"
+    "test:ui": "playwright test",
+    "build:server:standalone": "esbuild server/index.ts server/admin.ts server/backup.ts --bundle --platform=node --target=node24 --format=esm --outdir=deploy/vps/build/server --banner:js=\"import { createRequire as __createRequire } from 'node:module'; const require = __createRequire(import.meta.url);\" && node scripts/copy-migrations.cjs deploy/vps/build/server",
+    "package:vps": "npm run build && npm run build:server:standalone && node scripts/package-site.cjs"
   },
   "dependencies": {
     "@capacitor/android": "6.2.2",

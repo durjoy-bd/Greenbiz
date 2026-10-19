@@ -59,3 +59,14 @@ Motion and visual finish; see [MOTION-2.2.md](MOTION-2.2.md). No change to recor
 - `gradlew assembleDebug testDebugUnitTest` succeeded; 4 native parser tests passed.
 - APK `GreenBiz-2.2.0.apk`: versionCode 4, versionName 2.2.0, debug-signed. SHA-256 `2fa204021350fa8f954dfe43de6a4fe3dd5cc5fcdbd696b0cea90602de1bae72`.
 - Not performed: frame-rate profiling or haptics on a physical phone. View Transitions need Android System WebView 111 or newer; older WebViews use the CSS fallback.
+
+## GreenBiz 2.3.0 (19 October 2026)
+
+Accounts, admin console, static website and VPS deployment; see [ADMIN-2.3.md](ADMIN-2.3.md).
+
+- Lint, typecheck, web build and standalone server bundle succeeded. The bundle runs in an empty folder with no `node_modules`.
+- `npm test`: 116 unit/API tests passed, including 8 admin and account-security tests.
+- 25 browser journeys passed against this build, including the admin console journey (sign in, open a shop's records, reset an owner's password, audit entries) and a phone-width check.
+- Deployed to the shared VPS as two Docker containers on port 8790 (API 256 MB and web 128 MB caps; about 32 MB and 44 MB in use). Health, website and admin sign-in verified over the public internet. A real browser over plain HTTP opened a device shop and the admin console with no console errors. A verified backup was taken and a nightly backup job installed. No existing site, nginx configuration or port-80/443 forwarding was changed; only firewall port 8790 was opened.
+- `gradlew assembleDebug testDebugUnitTest` succeeded; 4 native parser tests passed. APK `GreenBiz-2.3.0.apk`: versionCode 5, versionName 2.3.0, debug-signed. SHA-256 `d502e8531cd01f9367c78d46352e8f1cd7d1cb51668ba3478d2c685e55ff57d6`.
+- Not done: HTTPS (no domain yet), so the deployment is for testing. The Android app cannot sign in to an HTTP server. No physical-device test.

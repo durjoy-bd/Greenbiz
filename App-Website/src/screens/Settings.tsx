@@ -14,7 +14,8 @@ import {
   Leaf,
 } from 'lucide-react';
 import { useStore } from '../data/store';
-import { serverURL } from '../data/api';
+import { api, saveSession, serverURL } from '../data/api';
+import type { Session } from '../../shared/types';
 import { Button, Card, Field, PageHeader, Empty } from '../components/UI';
 import { useTask } from '../components/useTask';
 import { download, csv, dateLabel } from '../utils';
@@ -68,6 +69,7 @@ export function Settings({ nav }: { nav: Navigate }) {
         </div>
         {mode === 'server' && <p className="small break muted">{serverURL() || location.origin}</p>}
       </Card>
+      {mode === 'server' && user?.role === 'merchant' && <PasswordCard />}
       <FeatureSettings />
       <AppearanceSettings />
       <form
@@ -286,7 +288,7 @@ export function Settings({ nav }: { nav: Navigate }) {
       <div className="about-greenbiz">
         <Leaf size={18} />
         <b>GreenBiz</b>
-        <span>2.2.0 · Built for your next chapter</span>
+        <span>2.3.0 · Built for your next chapter</span>
       </div>
     </>
   );
@@ -333,5 +335,37 @@ export function Activity({ nav }: { nav: Navigate }) {
         )}
       </Card>
     </>
+  );
+}
+
+function PasswordCard() {
+  const [form, setForm] = useState({ current: '', password: '' });
+  const { run, busy } = useTask();
+  const { setError } = useStore();
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        void run(async () => {
+          const session = await api<Session>('/api/auth/password', form, undefined, '');
+          await saveSession(session);
+          setForm({ current: '', password: '' });
+          setError('Password changed. Your other devices were signed out.');
+        });
+      }}
+    >
+      <Card>
+        <h2>Change password</h2>
+        <Field label="Current password">
+          <input type="password" autoComplete="current-password" required value={form.current} onChange={(e) => setForm({ ...form, current: e.target.value })} />
+        </Field>
+        <Field label="New password" hint="10+ characters with three of: lowercase, uppercase, numbers, symbols.">
+          <input type="password" autoComplete="new-password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        </Field>
+        <Button type="submit" disabled={busy}>
+          Change password
+        </Button>
+      </Card>
+    </form>
   );
 }

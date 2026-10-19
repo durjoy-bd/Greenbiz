@@ -45,8 +45,8 @@ test('phone screens stay within the viewport', async ({ page }) => {
 test('server account can register, sign out and sign in again', async ({ page }) => {
   const email = `browser-${Date.now()}@example.test`;
   await page.goto('/');
-  await page.getByText('Optional bank & cloud portal', { exact: true }).click();
-  await page.getByRole('button', { name: 'Connect to business server' }).click();
+  // Served by a GreenBiz server, accounts are a first-class path on the welcome screen.
+  await page.getByRole('button', { name: 'Sign in or create an account' }).click();
   await page.getByRole('button', { name: 'Register', exact: true }).click();
   await page.getByLabel('Shop name').fill('Connected Corner');
   await page.getByLabel('Email', { exact: true }).fill(email);
@@ -55,8 +55,8 @@ test('server account can register, sign out and sign in again', async ({ page })
   await expect(page.getByRole('heading', { name: 'Connected Corner' })).toBeVisible();
   await page.getByRole('button', { name: 'Settings', exact: true }).first().click();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
-  await page.getByText('Optional bank & cloud portal', { exact: true }).click();
-  await page.getByRole('button', { name: 'Connect to business server' }).click();
+  // Served by a GreenBiz server, accounts are a first-class path on the welcome screen.
+  await page.getByRole('button', { name: 'Sign in or create an account' }).click();
   await page.getByLabel('Email', { exact: true }).fill(email);
   await page.getByLabel('Password', { exact: true }).fill('Browser-Test-9182');
   await page.getByRole('button', { name: 'Sign in', exact: true }).last().click();

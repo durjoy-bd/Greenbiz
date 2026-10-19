@@ -1,5 +1,7 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import type { Session } from '../../shared/types';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { bytesToHex } from '@noble/hashes/utils.js';
 interface SessionVault {
   get(options: { key: string }): Promise<{ value: string | null }>;
   set(options: { key: string; value: string }): Promise<void>;
@@ -20,8 +22,9 @@ export class ApiError extends Error {
   }
 }
 export const native = Capacitor.isNativePlatform();
+/** The chosen server; a build can preset one with VITE_GREENBIZ_SERVER (blank means this website's own server). */
 export function serverURL() {
-  return localStorage.getItem('greenbiz-server') || '';
+  return localStorage.getItem('greenbiz-server') ?? (import.meta.env.VITE_GREENBIZ_SERVER || '');
 }
 export function configureServer(raw: string) {
   const value = raw.trim().replace(/\/$/, '');
@@ -38,14 +41,8 @@ export function configureServer(raw: string) {
   localStorage.setItem('greenbiz-server', value);
   token = null;
 }
-const vaultKey = async () =>
-  Array.from(
-    new Uint8Array(
-      await crypto.subtle.digest('SHA-256', new TextEncoder().encode(serverURL() || 'same-origin')),
-    ),
-  )
-    .map((x) => x.toString(16).padStart(2, '0'))
-    .join('');
+// Synchronous SHA-256 so key derivation also works on plain-HTTP deployments without crypto.subtle.
+const vaultKey = async () => bytesToHex(sha256(new TextEncoder().encode(serverURL() || 'same-origin')));
 export async function restoreSession() {
   if (native) token = (await vault.get({ key: await vaultKey() })).value;
 }

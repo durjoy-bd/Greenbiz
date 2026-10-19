@@ -9,9 +9,9 @@ export function openDatabase(path: string): DatabaseSync {
   db.exec('PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;');
   db.exec('CREATE TABLE IF NOT EXISTS migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)');
   const current = db.prepare('SELECT MAX(version) AS version FROM migrations').get() as { version: number | null };
-  if ((current.version ?? 0) > 4) { db.close(); throw new Error('Database schema is newer than this server'); }
+  if ((current.version ?? 0) > 5) { db.close(); throw new Error('Database schema is newer than this server'); }
   try {
-    for (const migration of [{ version: 1, file: './schema.sql' }, { version: 2, file: './migration-002.sql' }, { version: 3, file: './migration-003.sql' }, { version: 4, file: './migration-004.sql' }]) {
+    for (const migration of [{ version: 1, file: './schema.sql' }, { version: 2, file: './migration-002.sql' }, { version: 3, file: './migration-003.sql' }, { version: 4, file: './migration-004.sql' }, { version: 5, file: './migration-005.sql' }]) {
       if ((current.version ?? 0) >= migration.version) continue;
       transaction(db, () => {
         db.exec(readFileSync(new URL(migration.file, import.meta.url), 'utf8'));

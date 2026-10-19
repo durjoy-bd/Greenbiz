@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ArrowRight,
   ShieldCheck,
@@ -26,6 +26,20 @@ export function Onboarding() {
     [server, setServer] = useState(serverURL()),
     [register, setRegister] = useState(false);
   const { start, authenticate, setError } = useStore();
+  // A GreenBiz server answering on this address (or the build's default) makes accounts the main path.
+  const [hosted, setHosted] = useState(false);
+  useEffect(() => {
+    let active = true;
+    const origin = serverURL();
+    if (native && !origin) return;
+    fetch(origin + '/api/health', { credentials: 'omit', signal: AbortSignal.timeout(5000) })
+      .then((r) => r.json())
+      .then((r: { status?: string }) => active && setHosted(r.status === 'ok'))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
   const { run, busy } = useTask();
   const change = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [key]: e.target.value });
@@ -80,13 +94,19 @@ export function Onboarding() {
           <Button onClick={() => setScreen('device')}>
             Create my shop <ArrowRight size={18} />
           </Button>
-          {!native && (
-            <details className="optional-cloud">
-              <summary>Optional bank & cloud portal</summary>
-              <Button variant="outline" onClick={() => setScreen('server')}>
-                <Cloud size={18} /> Connect to business server
-              </Button>
-            </details>
+          {hosted ? (
+            <Button variant="outline" onClick={() => setScreen('server')}>
+              <Cloud size={18} /> Sign in or create an account
+            </Button>
+          ) : (
+            !native && (
+              <details className="optional-cloud">
+                <summary>Optional bank & cloud portal</summary>
+                <Button variant="outline" onClick={() => setScreen('server')}>
+                  <Cloud size={18} /> Connect to business server
+                </Button>
+              </details>
+            )
           )}
           <Button variant="ghost" onClick={() => void run(() => start('demo'))} disabled={busy}>
             Explore sample shop <ArrowRight size={17} />
@@ -96,6 +116,11 @@ export function Onboarding() {
           <ShieldCheck size={17} />
           <span>Your records stay yours.</span>
         </div>
+        {hosted && !native && (
+          <div className="welcome-links">
+            <a href="#/admin">Administrator console</a>
+          </div>
+        )}
       </main>
     );
   return (
@@ -235,6 +260,12 @@ export function Onboarding() {
         >
           Forgot password?
         </Button>
+      )}
+      {screen === 'server' && register && (
+        <p className="fineprint">
+          The administrator of this GreenBiz server can view your shop records to provide support and keep the
+          service safe. Every administrator view is recorded in an audit log.
+        </p>
       )}
       <p className="fineprint">
         {screen === 'device'

@@ -1,0 +1,50 @@
+# GreenBiz on a shared VPS: website + API on one port, isolated from other sites.
+# Settings come from ./.env (see .env.example). Data lives in the greenbiz_data volume.
+name: greenbiz
+services:
+  api:
+    image: node:24-alpine
+    restart: unless-stopped
+    user: node
+    working_dir: /app
+    command: ["node", "server/index.js"]
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 8787
+      DATABASE_PATH: /data/greenbiz.sqlite
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN in .env}
+      ALLOW_INSECURE_HTTP: ${ALLOW_INSECURE_HTTP:-false}
+      GREENBIZ_VERSION: ${GREENBIZ_VERSION:-unknown}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_VISION_MODEL: ${OPENAI_VISION_MODEL:-}
+    volumes:
+      - ./build/server:/app/server:ro
+      - greenbiz_data:/data
+    mem_limit: 256m
+    cpus: 0.6
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks: [greenbiz]
+  web:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${GREENBIZ_PORT:-8790}:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./build/site:/srv:ro
+      - caddy_data:/data
+    mem_limit: 128m
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [greenbiz]
+volumes:
+  greenbiz_data:
+  caddy_data:
+networks:
+  greenbiz:
