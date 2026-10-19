@@ -1,4 +1,4 @@
-name: GreenBiz app checks
+name: GreenBiz checks
 on: [push, pull_request]
 defaults:
   run:
@@ -37,15 +37,33 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      # The default package list still includes the removed "tools" package.
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
       - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
       - run: npm ci
       - run: npm run android:sync
       - run: chmod +x android/gradlew
-      - run: cd android && ./gradlew assembleDebug bundleRelease --no-daemon
+      - run: cd android && ./gradlew testDebugUnitTest assembleDebug bundleRelease --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: GreenBiz-Android-internal
           path: |
             App-Website/android/app/build/outputs/apk/debug/*.apk
             App-Website/android/app/build/outputs/bundle/release/*.aab
+  ai-service:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Managed-AI-Service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: Managed-AI-Service/package-lock.json
+      - run: npm ci
+      - run: node node_modules/typescript/bin/tsc --noEmit
+      - run: npm test
