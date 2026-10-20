@@ -19,6 +19,10 @@ public class MainActivity extends BridgeActivity {
     }
     @Override protected void onNewIntent(android.content.Intent intent) {
         super.onNewIntent(intent); setIntent(intent);
-        if (intent.getBooleanExtra("greenbizPayments", false) && getBridge() != null) getBridge().triggerWindowJSEvent("greenbizPayment");
+        if (intent.getBooleanExtra("greenbizPayments", false) && getBridge() != null) {
+            getBridge().triggerWindowJSEvent("greenbizPayment");
+            // Handled here; left on the intent it would reopen the prompt at the next status() check.
+            intent.removeExtra("greenbizPayments");
+        }
     }
 }

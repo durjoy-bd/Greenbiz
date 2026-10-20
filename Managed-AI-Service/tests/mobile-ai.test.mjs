@@ -331,3 +331,16 @@ test('structured output cannot echo provider credentials through JSON Unicode es
   assert.equal(response.status,502);
   assert.equal((await response.text()).includes(fakeKey),false);
 });
+
+test('website origins come from the defaults plus ALLOWED_ORIGINS, ignoring malformed entries', async () => {
+  const preflight = (origin, env = {}) => handleMobileAi(req('/api/health', undefined, { method: 'OPTIONS', extra: { Origin: origin } }), env);
+  assert.equal((await preflight('https://greenbizdemosite.sustgpt.com')).status, 204);
+  assert.equal((await preflight('http://203.0.113.10:8790')).status, 403);
+  const env = { ALLOWED_ORIGINS: ' http://203.0.113.10:8790 , https://shop.example/path, not a url,https://shop.example.com ' };
+  const allowed = await preflight('http://203.0.113.10:8790', env);
+  assert.equal(allowed.status, 204);
+  assert.equal(allowed.headers.get('Access-Control-Allow-Origin'), 'http://203.0.113.10:8790');
+  assert.equal((await preflight('https://shop.example.com', env)).status, 204);
+  assert.equal((await preflight('https://shop.example', env)).status, 403);
+  assert.equal((await preflight('https://evil.example', env)).status, 403);
+});

@@ -79,13 +79,16 @@ export const floorToThousandMinor = (amount: number) => (amount <= 0 ? 0 : Math.
 const normalizeFacility = (value: unknown): RepaymentFacility =>
   value === 'revolving' || value === 'interest_only' || value === 'bullet' ? value : 'term';
 
-function suggestedPrincipalMinor(revenue: number, annualPct: number, months: number, min: number | null, max: number | null): number | null {
+/** What half of revenue can service on this plan; below the product's minimum, the minimum is shown as an entry amount. */
+function suggestedPrincipalMinor(revenue: number, annualPct: number, months: number, min: number | null, max: number | null) {
   const emi = affordableEmiMinor(revenue);
   if (emi <= 0) return null;
-  const principal = affordablePrincipalMinor(emi, annualPct, months);
+  const affordable = affordablePrincipalMinor(emi, annualPct, months);
   const floor = min ?? 0;
-  if (principal < floor) return floor > 0 ? floor : null;
-  return Math.round(clamp(principal, floor, max ?? Number.MAX_SAFE_INTEGER));
+  // Under a thousand taka there is no loan to suggest, and a ৳0 "high priority" match would mislead.
+  if (floor === 0 && floorToThousandMinor(affordable) <= 0) return null;
+  if (affordable < floor) return { principal: floor, affordable, belowMinimum: true };
+  return { principal: Math.round(clamp(affordable, floor, max ?? Number.MAX_SAFE_INTEGER)), affordable, belowMinimum: false };
 }
 
 export const priorityLabels: Record<MatchPriority, string> = { high: 'High priority', medium: 'Good fit', low: 'Stretch', unknown: 'Terms on request' };
@@ -95,6 +98,8 @@ export interface PlanMatch {
   plan: Plan; institution: string; fitScore: number; priority: MatchPriority;
   /** Monthly instalment in taka, or null without a published rate. */
   emi: number | null; suggestedAmount: number | null; affordabilityRatio: number | null;
+  /** True when suggestedAmount is the product's minimum loan, not an amount the shop can comfortably repay. */
+  entryAmount: boolean;
   interestRate: number | null; tenorMonths: number | null; facility: RepaymentFacility;
   reasons: string[]; requirements: string[]; warnings: string[];
 }
@@ -114,7 +119,7 @@ function evaluatePlan(plan: Plan, revenue: number, shopAgeMonths: number, reques
   const reasons: string[] = [], requirements: string[] = [], warnings: string[] = [];
 
   let principal: number | null = null;
-  let basis: 'requested' | 'affordable' | 'minimum' | 'none' = 'none';
+  let basis: 'requested' | 'affordable' | 'belowMinimum' | 'minimum' | 'none' = 'none';
   let requestedFits = true;
   if (requested !== undefined) {
     principal = clamp(requested, min ?? 0, max ?? Number.MAX_SAFE_INTEGER);
@@ -123,8 +128,14 @@ function evaluatePlan(plan: Plan, revenue: number, shopAgeMonths: number, reques
     reasons.push(`You asked for ${formatMoney(requested)}.`);
     if (!requestedFits) warnings.push(`This product lends ${min !== null ? formatMoney(min) : 'any amount'}${max !== null ? ` to ${formatMoney(max)}` : ''}.`);
   } else if (rate !== null && tenorMonths > 0) {
-    principal = suggestedPrincipalMinor(revenue, rate, tenorMonths, min, max);
-    basis = principal !== null ? 'affordable' : 'none';
+    const sized = suggestedPrincipalMinor(revenue, rate, tenorMonths, min, max);
+    principal = sized?.principal ?? null;
+    basis = sized === null ? 'none' : sized.belowMinimum ? 'belowMinimum' : 'affordable';
+    if (sized === null && revenue > 0) warnings.push('Recorded revenue is too low to size this loan yet.');
+    if (sized?.belowMinimum) {
+      reasons.push(`Half of your monthly revenue supports about ${formatMoney(floorToThousandMinor(sized.affordable))}; this product starts at ${formatMoney(sized.principal)}.`);
+      warnings.push("Your recorded revenue is below what this product's smallest loan needs.");
+    }
   } else if (min !== null) {
     principal = min;
     basis = 'minimum';
@@ -185,7 +196,8 @@ function evaluatePlan(plan: Plan, revenue: number, shopAgeMonths: number, reques
   return {
     plan, institution: institutionFor(plan)?.name ?? 'Unknown provider', fitScore, priority,
     emi: emi === null ? null : fromMinor(emi),
-    suggestedAmount: principal === null ? null : fromMinor(floorToThousandMinor(principal)),
+    suggestedAmount: principal === null ? null : fromMinor(basis === 'belowMinimum' || basis === 'minimum' ? principal : floorToThousandMinor(principal)),
+    entryAmount: basis === 'belowMinimum' || basis === 'minimum',
     affordabilityRatio: ratio === null ? null : Number(ratio.toFixed(2)),
     interestRate: rate, tenorMonths: rate === null ? null : tenorMonths, facility, reasons, requirements, warnings,
   } satisfies PlanMatch;
@@ -194,14 +206,15 @@ function evaluatePlan(plan: Plan, revenue: number, shopAgeMonths: number, reques
 function capacityFrom(ranked: PlanMatch[], revenue: number): LoanCapacity {
   if (revenue <= 0)
     return { monthlyRevenue: 0, maxAffordableEmi: 0, suggestedAmount: 0, tenorMonths: 0, interestRate: 0, facility: 'term', affordabilityRatio: null, priority: 'unknown', basis: 'insufficient_revenue', assumptions: ['Record business sales for at least a month so the estimate has revenue to work from.'] };
-  const usable = ranked.filter((m) => m.emi !== null && (m.suggestedAmount ?? 0) > 0);
+  // Only amounts the shop can service; a product's minimum loan is never presented as affordable.
+  const usable = ranked.filter((m) => m.emi !== null && !m.entryAmount && (m.suggestedAmount ?? 0) > 0);
   // Largest serviceable amount inside a real product band; term plans preferred.
   const pick = (pool: PlanMatch[]) => {
     if (!pool.length) return undefined;
     const term = pool.filter((m) => m.facility === 'term' && (m.tenorMonths ?? 0) <= 72);
     return [...(term.length ? term : pool)].sort((a, b) => (b.suggestedAmount ?? 0) - (a.suggestedAmount ?? 0))[0];
   };
-  const preferred = pick(usable.filter((m) => m.priority === 'high')) ?? pick(usable.filter((m) => m.priority === 'medium')) ?? pick(usable);
+  const preferred = pick(usable.filter((m) => m.priority === 'high')) ?? pick(usable.filter((m) => m.priority === 'medium'));
   const emi = affordableEmiMinor(revenue);
   if (preferred)
     return {
@@ -211,6 +224,9 @@ function capacityFrom(ranked: PlanMatch[], revenue: number): LoanCapacity {
       assumptions: ['Instalment is capped at 50% of your average monthly business revenue.', `Based on ${preferred.institution} — ${preferred.plan.planName}.`, "Uses the plan's lowest stated rate and published tenor.", 'Indicative only. The lender checks collateral, CIB and documents.'],
     };
   const ratio = affordabilityRatio(revenue, emi);
+  const benchmark = floorToThousandMinor(affordablePrincipalMinor(emi, BENCHMARK_RATE_PCT, BENCHMARK_TENOR_MONTHS));
+  if (benchmark <= 0)
+    return { monthlyRevenue: fromMinor(revenue), maxAffordableEmi: fromMinor(emi), suggestedAmount: 0, tenorMonths: 0, interestRate: 0, facility: 'term', affordabilityRatio: null, priority: 'unknown', basis: 'insufficient_revenue', assumptions: ['Recorded business revenue is too low to size a loan yet. Keep recording sales and check again.'] };
   return {
     monthlyRevenue: fromMinor(revenue), maxAffordableEmi: fromMinor(emi), suggestedAmount: fromMinor(floorToThousandMinor(affordablePrincipalMinor(emi, BENCHMARK_RATE_PCT, BENCHMARK_TENOR_MONTHS))),
     tenorMonths: BENCHMARK_TENOR_MONTHS, interestRate: BENCHMARK_RATE_PCT, facility: 'term', affordabilityRatio: ratio, priority: priorityForRatio(ratio), basis: 'indicative_benchmark',
@@ -223,11 +239,14 @@ export function matchPlans(options: { monthlyRevenue: number; shopAgeMonths: num
   const revenue = toMinor(Math.max(0, options.monthlyRevenue));
   const requested = options.requestedAmount && options.requestedAmount > 0 ? toMinor(options.requestedAmount) : undefined;
   const rank = { high: 0, medium: 1, low: 2, unknown: 3 } as const;
-  const ranked = plans
-    .filter((plan) => plan.serviceType === 'loan' || plan.serviceType === 'working_capital')
-    .map((plan) => evaluatePlan(plan, revenue, options.shopAgeMonths, requested))
-    .sort((a, b) => rank[a.priority] - rank[b.priority] || b.fitScore - a.fitScore || (a.emi ?? Number.MAX_SAFE_INTEGER) - (b.emi ?? Number.MAX_SAFE_INTEGER));
-  const capacity = capacityFrom(ranked, revenue);
+  const evaluate = (amount?: number) =>
+    plans
+      .filter((plan) => plan.serviceType === 'loan' || plan.serviceType === 'working_capital')
+      .map((plan) => evaluatePlan(plan, revenue, options.shopAgeMonths, amount))
+      .sort((a, b) => rank[a.priority] - rank[b.priority] || b.fitScore - a.fitScore || (a.emi ?? Number.MAX_SAFE_INTEGER) - (b.emi ?? Number.MAX_SAFE_INTEGER));
+  const ranked = evaluate(requested);
+  // "How much can I borrow?" always comes from revenue, not from the amount the owner typed.
+  const capacity = capacityFrom(requested === undefined ? ranked : evaluate(), revenue);
   let matches = ranked.slice(0, MATCH_LIMIT);
   // The headline estimate's plan always appears in the list.
   const headline = ranked.find((m) => m.plan.id === capacity.planId);

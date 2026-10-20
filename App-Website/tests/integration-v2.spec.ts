@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { registerVerified } from './support';
 const headers = { Origin: `http://127.0.0.1:${process.env.GREENBIZ_DEV_PORT ?? 5173}` };
 async function device(page: Page, name: string) {
   await page.goto('/');
@@ -7,19 +8,7 @@ async function device(page: Page, name: string) {
   await page.getByRole('button', { name: 'Open my shop' }).click();
 }
 async function connected(page: Page, name: string) {
-  const response = await page.request.post('/api/auth/register', {
-    headers,
-    data: {
-      email: `v2-${crypto.randomUUID()}@example.test`,
-      password: 'Integration-Test-9182',
-      shopName: name,
-      owner: '',
-      location: '',
-      phone: '',
-      bkash: '',
-    },
-  });
-  expect(response.ok()).toBe(true);
+  await registerVerified(page.request, { email: `v2-${crypto.randomUUID()}@example.test`, password: 'Integration-Test-9182', shopName: name });
   await page.goto('/');
   await page.evaluate(() => localStorage.setItem('greenbiz-mode', 'server'));
   await page.reload();

@@ -63,7 +63,8 @@ export function presetDates(preset: Exclude<PeriodPreset, 'custom'>, now = new D
     case 'year':
       return { from: today.slice(0, 4) + '-01-01', to: today, label: `${today.slice(0, 4)} so far` };
     case 'pickMonth': {
-      const chosen = month && /^\d{4}-\d{2}$/.test(month) ? month : today.slice(0, 7);
+      // A future month (typed past the picker's limit) falls back to this month.
+      const chosen = month && /^\d{4}-\d{2}$/.test(month) && month <= today.slice(0, 7) ? month : today.slice(0, 7);
       const end = monthEnd(chosen);
       return { from: chosen + '-01', to: end < today ? end : today, label: monthName(chosen) };
     }

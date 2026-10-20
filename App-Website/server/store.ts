@@ -9,9 +9,9 @@ export function openDatabase(path: string): DatabaseSync {
   db.exec('PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;');
   db.exec('CREATE TABLE IF NOT EXISTS migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)');
   const current = db.prepare('SELECT MAX(version) AS version FROM migrations').get() as { version: number | null };
-  if ((current.version ?? 0) > 5) { db.close(); throw new Error('Database schema is newer than this server'); }
+  if ((current.version ?? 0) > 6) { db.close(); throw new Error('Database schema is newer than this server'); }
   try {
-    for (const migration of [{ version: 1, file: './schema.sql' }, { version: 2, file: './migration-002.sql' }, { version: 3, file: './migration-003.sql' }, { version: 4, file: './migration-004.sql' }, { version: 5, file: './migration-005.sql' }]) {
+    for (const migration of [{ version: 1, file: './schema.sql' }, { version: 2, file: './migration-002.sql' }, { version: 3, file: './migration-003.sql' }, { version: 4, file: './migration-004.sql' }, { version: 5, file: './migration-005.sql' }, { version: 6, file: './migration-006.sql' }]) {
       if ((current.version ?? 0) >= migration.version) continue;
       transaction(db, () => {
         db.exec(readFileSync(new URL(migration.file, import.meta.url), 'utf8'));
@@ -37,4 +37,6 @@ export function writeWorkspace(db: DatabaseSync, userId: string, state: Workspac
   // Offers are authoritative rows owned by bank sessions, never client workspace writes.
   const document = JSON.stringify({ ...state, offers: [] });
   db.prepare('UPDATE workspaces SET document=?,updated_at=? WHERE user_id=?').run(document, now, userId);
+  // Listed and searched without opening the document.
+  db.prepare('UPDATE shops SET name=? WHERE id=? AND name<>?').run(state.shop.name, userId, state.shop.name);
 }

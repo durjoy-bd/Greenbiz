@@ -36,7 +36,12 @@ interface Store {
   syncConflict: string;
   setError: (e: string) => void;
   start: (mode: 'device' | 'demo', shop?: Partial<Shop>) => Promise<void>;
-  authenticate: (register: boolean, form: Record<string, string>) => Promise<void>;
+  /** Signs in and opens the account's shop (or the lending desk). Returns the signed-in user. */
+  signIn: (email: string, password: string) => Promise<User>;
+  /** Creates an account. With email confirmation on, nobody is signed in until the link is used. */
+  register: (form: Record<string, string>) => Promise<{ verificationRequired: true; email: string } | { verificationRequired: false; user: User }>;
+  /** Reloads name, role and verification status after the profile changes. */
+  refreshUser: () => Promise<void>;
   reconnect: (password: string) => Promise<void>;
   act: (a: Action) => Promise<void>;
   refresh: () => Promise<void>;
@@ -252,32 +257,63 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setError('');
     await publish(value, epoch);
   }
-  async function authenticate(register: boolean, form: Record<string, string>) {
-    const epoch = activate();
-    selectApiShop('');
-    const session = await api<Session>(
-      '/api/auth/' + (register ? 'register' : 'login'),
-      register ? form : { email: form.email, password: form.password },
-    );
-    assertCurrent(epoch);
-    await saveSession(session);
-    assertCurrent(epoch);
-    if (session.user.role === 'bank') {
-      setUser(session.user);
+  /** Opens a signed-in account: the lending desk, its last-used shop, or no shop yet. */
+  async function openAccount(owner: User, epoch: number, preferred?: string) {
+    if (owner.role === 'bank') {
+      setUser(owner);
       setMode('server');
       setWorkspace(null);
       localStorage.setItem('greenbiz-mode', 'server');
       location.hash = '/bank';
       return;
     }
-    const listed = await api<{ shops: ShopSummary[]; activeDefault: string }>(
+    const listed = await api<{ shops: ShopSummary[]; activeDefault?: string }>(
       '/api/shops',
       undefined,
       undefined,
       '',
     );
     assertCurrent(epoch);
-    await openServerShop(listed.activeDefault, session.user, listed.shops, epoch);
+    if (!listed.shops.length) {
+      // For example an administrator account: signed in, with a shop still to create.
+      setUser(owner);
+      setMode('server');
+      setShops([]);
+      setShopId('');
+      localStorage.setItem('greenbiz-mode', 'server');
+      await set(metaKey(), { user: owner, shops: [], shopId: '' } satisfies SessionMeta);
+      return;
+    }
+    const id = listed.shops.some((s) => s.id === preferred) ? preferred! : listed.activeDefault!;
+    await openServerShop(id, owner, listed.shops, epoch);
+  }
+  async function signIn(email: string, password: string) {
+    const epoch = activate();
+    selectApiShop('');
+    const session = await api<Session>('/api/auth/login', { email, password });
+    assertCurrent(epoch);
+    await saveSession(session);
+    assertCurrent(epoch);
+    await openAccount(session.user, epoch);
+    return session.user;
+  }
+  async function register(form: Record<string, string>) {
+    const epoch = activate();
+    selectApiShop('');
+    const result = await api<Session | { verificationRequired: true; email: string }>('/api/auth/register', form);
+    assertCurrent(epoch);
+    if ('verificationRequired' in result) return result;
+    await saveSession(result);
+    assertCurrent(epoch);
+    await openAccount(result.user, epoch);
+    return { verificationRequired: false as const, user: result.user };
+  }
+  async function refreshUser() {
+    if (mode !== 'server') return;
+    const fresh = (await api<{ user: User }>('/api/auth/me', undefined, undefined, '')).user;
+    setUser(fresh);
+    const meta = await get<SessionMeta>(metaKey());
+    if (meta) await set(metaKey(), { ...meta, user: fresh });
   }
   async function act(action: Action) {
     if (!mode || !current.current) throw new Error('Open a shop first.');
@@ -583,7 +619,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               !(e instanceof ApiError) ||
               e.status !== 0 ||
               !cached ||
-              cached.user.role !== 'merchant'
+              cached.user.role !== 'merchant' ||
+              !cached.shopId
             )
               throw e;
             await openServerShop(cached.shopId, cached.user, cached.shops, epoch);
@@ -595,21 +632,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (owner.role === 'bank') {
             setUser(owner);
             setMode('server');
-            location.hash = '/bank';
+            if (!/^#\/(account|admin)/.test(location.hash)) location.hash = '/bank';
           } else {
-            const listed = await api<{ shops: ShopSummary[]; activeDefault: string }>(
-              '/api/shops',
-              undefined,
-              undefined,
-              '',
-            );
-            assertCurrent(epoch);
             const previous = await get<SessionMeta>(metaKey());
             assertCurrent(epoch);
-            const id = listed.shops.some((s) => s.id === previous?.shopId)
-              ? previous!.shopId
-              : listed.activeDefault;
-            await openServerShop(id, owner, listed.shops, epoch);
+            await openAccount(owner, epoch, previous?.shopId);
           }
         }
       } catch (e) {
@@ -645,7 +672,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         error,
         setError,
         start,
-        authenticate,
+        signIn,
+        register,
+        refreshUser,
         reconnect,
         act,
         refresh,

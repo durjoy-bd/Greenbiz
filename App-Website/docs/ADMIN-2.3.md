@@ -1,5 +1,7 @@
 # GreenBiz 2.3: accounts, admin console and VPS deployment
 
+> **Superseded for accounts and administration by [ACCOUNTS-2.4.md](ACCOUNTS-2.4.md).** From 2.4, administrators are accounts with an Admin or Super Admin role, the panel needs two-step verification, and temporary passwords are replaced by emailed reset links. The static website notes below still apply.
+
 ## Who signs in where
 
 | Person | Where | Account type |

@@ -224,7 +224,7 @@ export function FeatureSettings() {
           <h2>Payment messages</h2>
         </div>
         <p className="small muted">
-          Optional Android access imports supported bKash, Nagad, Rocket and UPI confirmations from
+          Optional Android access imports supported bKash, Nagad, Rocket, Upay and UPI confirmations from
           the last 90 days and can alert you to new receipts. Personal messages, OTPs and promotions
           are filtered on the phone. Only structured records you review and save enter your shop; no
           raw messages go to the server or AI.

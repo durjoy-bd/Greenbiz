@@ -255,7 +255,16 @@ export async function scanStock(image: string, _server: boolean) {
   return z
     .object({ products: z.array(photoProduct).max(20) })
     .parse(jsonReply(reply))
-    .products.map((p) => ({ ...p, source: 'photo' as const }));
+    // Rounded to what a product record accepts (3-decimal counts, whole poisha), so a draft always saves.
+    .products.map((p) => ({
+      ...p,
+      quantity: Math.round(p.quantity * 1000) / 1000,
+      lowAt: Math.round(p.lowAt * 1000) / 1000,
+      cost: Math.round(p.cost * 100) / 100,
+      price: Math.round(p.price * 100) / 100,
+      unit: p.unit.trim() || 'Piece',
+      source: 'photo' as const,
+    }));
 }
 export async function suggestSale(text: string, products: Product[], useAi: boolean) {
   const expected = scope;

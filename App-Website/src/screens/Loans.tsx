@@ -74,7 +74,9 @@ function PlanCard({ match, headline }: { match: PlanMatch; headline: boolean }) 
             {match.institution} · {facilityLabels[match.facility]}
           </small>
         </span>
-        <span className={'pill ' + tone}>{priorityLabels[match.priority]}</span>
+        <span className={'pill ' + tone}>
+          {match.interestRate !== null && match.emi === null ? 'Not sized yet' : priorityLabels[match.priority]}
+        </span>
       </div>
       {headline && <span className="pill good">Basis of your borrowing estimate</span>}
       <div className="plan-figures">
@@ -87,7 +89,7 @@ function PlanCard({ match, headline }: { match: PlanMatch; headline: boolean }) 
           <b>{match.emi === null ? '—' : money(Math.round(match.emi))}</b>
         </span>
         <span>
-          <small>{match.suggestedAmount === null ? 'Tenor' : 'Suggested'}</small>
+          <small>{match.suggestedAmount === null ? 'Tenor' : match.entryAmount ? 'Starts at' : 'Suggested'}</small>
           <b>
             {match.suggestedAmount === null
               ? match.tenorMonths

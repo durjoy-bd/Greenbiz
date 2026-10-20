@@ -16,11 +16,13 @@ import {
   ChevronRight,
   ChartNoAxesCombined,
   MessageSquare,
+  LayoutDashboard as AdminIcon,
+  Plus,
 } from 'lucide-react';
 import { App as NativeApp } from '@capacitor/app';
 import { useStore } from './data/store';
 import { native } from './data/api';
-import { Logo, Button, IconButton } from './components/UI';
+import { Logo, Button, IconButton, Card, Field } from './components/UI';
 import { useTask } from './components/useTask';
 import { Onboarding } from './screens/Onboarding';
 import { Home, WebDashboard } from './screens/Dashboard';
@@ -39,11 +41,19 @@ import { Bank } from './screens/Bank';
 import { Finance } from './screens/Finance';
 import { Transactions } from './screens/Transactions';
 import { LivePayment } from './components/LivePayment';
-import { AdminApp } from './screens/Admin';
+import { AdminApp } from './screens/admin/AdminApp';
+import { AuthRoute, authPages, SignIn, type AuthPage } from './screens/Auth';
+import { Account } from './screens/Account';
+import { PermissionDenied } from './screens/Denied';
+import { ProfileMenu } from './components/ProfileMenu';
+import { openAdminPanel, rememberReturn } from './data/account';
+import { isStaff } from '../shared/permissions';
 import { businessTools } from './data/business';
 import { transition, type NavDirection } from './components/Experience';
 /** Pages opened from a tab; moving into one slides forward, leaving it slides back. */
-const subPages = new Set(['product', 'camera', 'sale', 'transactions', 'activity', 'orders', 'customer']);
+const subPages = new Set(['product', 'camera', 'sale', 'transactions', 'activity', 'orders', 'customer', 'account']);
+/** Pages that belong to a signed-in shop; opening one signed out asks to sign in first. */
+const shopPages = new Set(['stock', 'sales', 'payments', 'finance', 'growth', 'loans', 'advisor', 'settings', 'activity', 'orders', 'transactions', 'account', 'bank']);
 function navDirection(from: string, to: string): NavDirection {
   if (from === to) return 'tab';
   if (subPages.has(to)) return 'forward';
@@ -157,12 +167,31 @@ export default function App() {
     </>
   );
   if (current.page === 'admin')
-    return (
+    return native ? (
+      <PermissionDenied
+        title="The admin panel opens in your browser"
+        detail="For security, administrators sign in to the admin panel on the website, with an authenticator code. Use “Admin panel” in the account menu to open it in your browser."
+      />
+    ) : (
       <>
         {alerts}
         <AdminApp />
       </>
     );
+  if (authPages.includes(current.page as AuthPage)) {
+    // Signed-in people have nothing to do on the sign-in and sign-up pages.
+    if (!loading && mode === 'server' && user && ['login', 'register'].includes(current.page)) {
+      setTimeout(() => nav(user.role === 'bank' ? 'bank' : 'home'));
+      return null;
+    }
+    return (
+      <>
+        {alerts}
+        <AuthRoute page={current.page as AuthPage} token={current.id} />
+      </>
+    );
+  }
+  if (current.page === 'denied') return <PermissionDenied />;
   if (current.page === 'pay')
     return (
       <>
@@ -178,18 +207,42 @@ export default function App() {
         <p>Opening your business…</p>
       </div>
     );
-  if (!mode)
+  if (!mode) {
+    if (shopPages.has(current.page)) {
+      rememberReturn(location.hash);
+      return (
+        <>
+          {alerts}
+          <SignIn notice="Sign in to continue. We’ll take you back to the page you asked for." />
+        </>
+      );
+    }
     return (
       <>
         {alerts}
         <Onboarding />
       </>
     );
+  }
+  if (current.page === 'account' && (user?.role === 'bank' || (mode === 'server' && !shops.length)))
+    return (
+      <main className="account-standalone">
+        {alerts}
+        <Account nav={nav} />
+      </main>
+    );
   if (user?.role === 'bank' || current.page === 'bank')
     return (
       <>
         {alerts}
         <Bank nav={nav} />
+      </>
+    );
+  if (!w && mode === 'server' && user && !shops.length)
+    return (
+      <>
+        {alerts}
+        <FirstShop />
       </>
     );
   if (!w)
@@ -299,6 +352,9 @@ export default function App() {
     case 'activity':
       content = <Activity nav={nav} />;
       break;
+    case 'account':
+      content = <Account nav={nav} />;
+      break;
     case 'orders':
       content = <Orders nav={nav} />;
       break;
@@ -373,6 +429,7 @@ export default function App() {
         <Button variant="gold" onClick={() => nav('camera')}>
           <Camera size={18} /> Snap stock
         </Button>
+        <ProfileMenu />
         <div className="sidebar-footer">
           {mode === 'server' ? <Cloud size={19} /> : <Database size={19} />}
           <span>
@@ -408,6 +465,7 @@ export default function App() {
           >
             <SettingsIcon size={20} />
           </button>
+          <ProfileMenu compact />
         </div>
         {mode === 'demo' && (
           <div className="demo-strip">
@@ -474,3 +532,46 @@ export default function App() {
     </div>
   );
 }
+
+/** Signed in, but the account has no shop yet (for example a new administrator). */
+function FirstShop() {
+  const { user, createShop, leave } = useStore();
+  const [name, setName] = useState('');
+  const { run, busy } = useTask();
+  return (
+    <main className="auth-page">
+      <div className="auth-heading">
+        <Logo />
+      </div>
+      <h1>Welcome{user?.name ? ', ' + user.name.split(' ')[0] : ''}</h1>
+      <p className="muted">Your account has no shop yet. Create one to start recording stock and sales.</p>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void run(() => createShop(name));
+        }}
+      >
+        <Card>
+          <Field label="Shop or business name" required>
+            <input required maxLength={100} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Shapla Store" />
+          </Field>
+        </Card>
+        <Button className="full" type="submit" disabled={busy}>
+          <Plus size={18} /> Create my shop
+        </Button>
+      </form>
+      {isStaff(user?.accessRole) && (
+        <Button variant="outline" className="full" onClick={openAdminPanel}>
+          <AdminIcon size={18} /> Open the admin panel
+        </Button>
+      )}
+      <Button variant="ghost" className="full" onClick={() => (location.hash = '#/account')}>
+        Profile & account
+      </Button>
+      <Button variant="ghost" className="full" disabled={busy} onClick={() => void run(leave)}>
+        Sign out
+      </Button>
+    </main>
+  );
+}
+

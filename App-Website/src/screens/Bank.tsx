@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Landmark, Lock, Search, Send, ArrowUpRight, LogOut, FileText } from 'lucide-react';
+import { Landmark, Lock, Search, Send, ArrowUpRight, FileText } from 'lucide-react';
 import { useStore } from '../data/store';
+import { ProfileMenu } from '../components/ProfileMenu';
 import { api } from '../data/api';
-import { Card, Button, Empty, Field, Logo, Meter, IconButton } from '../components/UI';
+import { Card, Button, Empty, Field, Logo, Meter } from '../components/UI';
 import { useTask } from '../components/useTask';
 import { money, dateLabel } from '../utils';
 import type { BusinessProfile } from '../../shared/types';
@@ -17,7 +18,7 @@ interface Interest {
   createdAt: string;
 }
 export function Bank({ nav }: { nav: Navigate }) {
-  const { user, leave } = useStore();
+  const { user } = useStore();
   const [businesses, setBusinesses] = useState<BusinessProfile[]>([]),
     [interests, setInterests] = useState<Interest[]>([]),
     [selected, setSelected] = useState(''),
@@ -75,11 +76,7 @@ export function Bank({ nav }: { nav: Navigate }) {
           </button>
         </nav>
         <span className="bank-account">{user?.email || 'Secure lending desk'}</span>
-        {user && (
-          <IconButton label="Sign out" onClick={() => void run(leave)}>
-            <LogOut size={18} />
-          </IconButton>
-        )}
+        {user && <ProfileMenu compact />}
       </header>
       {user?.role !== 'bank' ? (
         <div className="bank-unauthorized">

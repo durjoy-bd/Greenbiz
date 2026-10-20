@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { emailedToken, registerVerified } from './support';
 test('device shop persists inventory, records a sale and keeps demo separate', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Create my shop' }).click();
@@ -46,20 +47,27 @@ test('server account can register, sign out and sign in again', async ({ page })
   const email = `browser-${Date.now()}@example.test`;
   await page.goto('/');
   // Served by a GreenBiz server, accounts are a first-class path on the welcome screen.
-  await page.getByRole('button', { name: 'Sign in or create an account' }).click();
-  await page.getByRole('button', { name: 'Register', exact: true }).click();
-  await page.getByLabel('Shop name').fill('Connected Corner');
+  await page.getByRole('button', { name: 'Create an account' }).click();
+  await page.getByLabel('Full name').fill('Browser Owner');
   await page.getByLabel('Email', { exact: true }).fill(email);
   await page.getByLabel('Password', { exact: true }).fill('Browser-Test-9182');
+  await page.getByLabel('Confirm password').fill('Browser-Test-9182');
+  await page.getByLabel('Shop or business name').fill('Connected Corner');
   await page.getByRole('button', { name: 'Create account', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  await page.goto('/#/verify-email/' + (await emailedToken(email, 'verify-email')));
+  await expect(page.getByRole('heading', { name: 'Email confirmed' })).toBeVisible();
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('Password', { exact: true }).fill('Browser-Test-9182');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Connected Corner' })).toBeVisible();
   await page.getByRole('button', { name: 'Settings', exact: true }).first().click();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
-  // Served by a GreenBiz server, accounts are a first-class path on the welcome screen.
-  await page.getByRole('button', { name: 'Sign in or create an account' }).click();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.getByLabel('Email', { exact: true }).fill(email);
   await page.getByLabel('Password', { exact: true }).fill('Browser-Test-9182');
-  await page.getByRole('button', { name: 'Sign in', exact: true }).last().click();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Connected Corner' })).toBeVisible();
   await page.route('**/api/auth/logout', (route) =>
     route.fulfill({
@@ -79,19 +87,7 @@ test('public customer submits a claim and merchant records receipt without fake 
 }) => {
   const email = `invoice-${Date.now()}@example.test`;
   const headers = { Origin: `http://127.0.0.1:${process.env.GREENBIZ_DEV_PORT ?? 5173}` };
-  const registered = await page.request.post('/api/auth/register', {
-    headers,
-    data: {
-      email,
-      password: 'Invoice-Test-9182',
-      shopName: 'Invoice Corner',
-      owner: 'Test owner',
-      location: 'Dhaka',
-      phone: '01700000000',
-      bkash: '01700000000',
-    },
-  });
-  expect(registered.ok()).toBe(true);
+  await registerVerified(page.request, { email, password: 'Invoice-Test-9182', shopName: 'Invoice Corner', location: 'Dhaka' });
   const product = await page.request.post('/api/actions', {
     headers,
     data: {

@@ -278,7 +278,7 @@ footer a:hover { color: var(--green); }
 <section class="hero">
   <div class="wrap">
     <div>
-      <a class="pill" href="https://github.com/durjoy-bd/Greenbiz/releases/latest"><b>v2.3.0</b> Admin console, accounts and VPS deployment →</a>
+      <a class="pill" href="https://github.com/durjoy-bd/Greenbiz/releases/latest"><b>v2.4.0</b> Accounts, profiles and a two-step admin panel →</a>
       <h1>The business copilot for <em>small shops</em> in Bangladesh.</h1>
       <p class="lead">Stock, sales, bKash and Nagad payments, reports, a credit profile and matched bank loans — in one Android app that works offline from the first tap.</p>
       <div class="hero-cta">
@@ -312,7 +312,7 @@ footer a:hover { color: var(--green); }
     <div class="stat"><strong>100%</strong><span>usable offline on the phone</span></div>
     <div class="stat"><strong>39</strong><span>published SME loan products matched</span></div>
     <div class="stat"><strong>8</strong><span>Bangladeshi banks in the catalogue</span></div>
-    <div class="stat"><strong>169</strong><span>automated tests on every push</span></div>
+    <div class="stat"><strong>217</strong><span>automated tests on every push</span></div>
     <div class="stat"><strong>0</strong><span>API keys for users to set up</span></div>
   </div>
 </div>
@@ -433,7 +433,7 @@ footer a:hover { color: var(--green); }
     <div class="section-head reveal">
       <span class="eyebrow">Beyond the phone</span>
       <h2>Built for the shop, the bank and the operator.</h2>
-      <p class="lead">The same records power a desktop dashboard, a consent-based portal for lenders, and an admin console for whoever runs the server.</p>
+      <p class="lead">The same records power a desktop dashboard, a consent-based portal for lenders, and an admin panel for whoever runs the server.</p>
     </div>
     <div class="screens-grid reveal">
       <div>
@@ -446,12 +446,12 @@ footer a:hover { color: var(--green); }
           <p>Lenders see only shops that chose to share — and only their aggregates. Customer names and stock lists stay private.</p>
         </div>
         <div class="card-dark">
-          <h3>Admin console <span class="eyebrow" style="font-size:11px">new in 2.3</span></h3>
-          <p>For the people who operate a GreenBiz server.</p>
+          <h3>Admin panel <span class="eyebrow" style="font-size:11px">new in 2.4</span></h3>
+          <p>For the people who run a GreenBiz server, behind a password and an authenticator code.</p>
           <ul class="admin-list">
-            <li>Platform overview and 30-day charts</li>
-            <li>Every shop's records with CSV and JSON export</li>
-            <li>Suspend, reset, sign out and audit accounts</li>
+            <li>Registrations and daily and monthly active users</li>
+            <li>User, Admin and Super Admin roles enforced by the server</li>
+            <li>Every privileged action in an append-only audit trail</li>
           </ul>
         </div>
       </div>
@@ -475,7 +475,7 @@ footer a:hover { color: var(--green); }
       <div class="card"><div class="ico amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div><h3>No fake “verified”</h3><p>A TrxID is a customer's claim, not proof. Nothing in the app can mark a payment verified without a real provider integration.</p></div>
       <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div><h3>Keystore-encrypted secrets</h3><p>Session tokens and AI credentials are encrypted with an Android Keystore key. Servers store only SHA-256 hashes.</p></div>
       <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M17 11l2 2 4-4"/></svg></div><h3>Consent before banks</h3><p>Lenders see a shop only after the owner turns sharing on — and only totals and scores, never customers or stock.</p></div>
-      <div class="card"><div class="ico amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v6H4zM4 14h16v6H4zM8 7h.01M8 17h.01"/></svg></div><h3>Hardened server</h3><p>bcrypt passwords, HttpOnly SameSite cookies, origin checks, rate limits, strict schemas and an audit log for administrators.</p></div>
+      <div class="card"><div class="ico amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v6H4zM4 14h16v6H4zM8 7h.01M8 17h.01"/></svg></div><h3>Hardened server</h3><p>bcrypt passwords, email confirmation, sign-in lockouts, HttpOnly SameSite cookies, origin checks, strict schemas and two-step sign-in for administrators.</p></div>
       <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9M12 7v5l3 3M17 3h4v4"/></svg></div><h3>Exactly-once writes</h3><p>Every sale and offline change carries a request ID, so a lost connection or a retry can never duplicate money or stock.</p></div>
     </div>
   </div>

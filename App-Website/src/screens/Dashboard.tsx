@@ -120,7 +120,9 @@ export function Home({ nav }: { nav: Navigate }) {
           <AnimatedMoney value={d.todaySales} />
         </strong>
         <p>
-          {num(d.todayCount)} sales · Cash {money(d.cash)} · bKash {money(d.bkash)}
+          {/* Every non-cash method (bKash, Nagad, Rocket, bank…) so the two parts add up to the total. */}
+          {num(d.todayCount)} sales · Cash {money(d.cash)} · Digital{' '}
+          {money(Math.round((d.todaySales - d.cash) * 100) / 100)}
         </p>
       </div>
       <div className="quick-actions">
@@ -245,7 +247,7 @@ export function WebDashboard({ nav }: { nav: Navigate }) {
         {[
           ['Sales this month', <AnimatedMoney key="m" value={d.monthSales} />, 'From recorded sales'],
           ['Number of sales', <AnimatedNumber key="n" value={d.monthCount} />, 'Every sale, accounted for'],
-          ['bKash share', d.digital + '%', 'Payment method recorded by shop'],
+          ['Digital share', d.digital + '%', 'Non-cash sales this month, as recorded'],
           [
             'Stock value',
             <AnimatedMoney key="s" value={d.stockValue} />,

@@ -11,3 +11,8 @@
 Thumbs.db
 .vscode/
 .idea/
+
+# Local-only folders: builds and video are published on the Releases page
+/releases/
+/Video/
+/archive/

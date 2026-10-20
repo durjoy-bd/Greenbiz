@@ -16,7 +16,7 @@ import { useStore } from '../data/store';
 import { api } from '../data/api';
 import { Button, Card, Empty, Field, PageHeader, Status, IconButton } from '../components/UI';
 import { useTask } from '../components/useTask';
-import { money, uid, errorText } from '../utils';
+import { money, uid, errorText, copyText } from '../utils';
 import type { Navigate } from './Dashboard';
 import type { Payment } from '../../shared/types';
 export function Payments({ nav }: { nav: Navigate }) {
@@ -120,7 +120,7 @@ export function Payments({ nav }: { nav: Navigate }) {
                     variant="outline"
                     onClick={() =>
                       void run(async () => {
-                        await navigator.clipboard.writeText(
+                        await copyText(
                           `Hello ${p.customer}, please check payment ${p.trxId} for order ${p.order}. The claimed amount is ${money(p.amount)}. Please send the receipt for review.`,
                         );
                         setError('Request copied. You can share it with the customer.');
@@ -400,7 +400,7 @@ export function CustomerPage({ token, nav }: { token?: string; nav: Navigate }) 
                       disabled={!order.shop.bkash}
                       onClick={() =>
                         void run(async () => {
-                          await navigator.clipboard.writeText(order.shop.bkash);
+                          await copyText(order.shop.bkash);
                           setError('Number copied');
                         })
                       }
@@ -611,7 +611,7 @@ export function Orders({ nav }: { nav: Navigate }) {
                 variant="outline"
                 onClick={() =>
                   void run(async () => {
-                    await navigator.clipboard.writeText(link);
+                    await copyText(link);
                     setError('Payment link copied');
                   })
                 }

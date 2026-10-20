@@ -18,15 +18,32 @@ export interface AiEnvironment {
   GLOBAL_DAILY_LIMIT?: string;
   DEVICE_DAILY_LIMIT?: string;
   IP_DAILY_LIMIT?: string;
+  ALLOWED_ORIGINS?: string;
 }
 export interface AiDependencies { fetch?: typeof fetch; now?: () => Date }
 
 const DEFAULT_MODEL = "google/gemini-3.8-flash";
 const DEFAULT_PROVIDER = "google-ai-studio/flex";
-const ORIGINS = new Set([
+const DEFAULT_ORIGINS = [
   "https://greenbiz-ai-service.dearjelly6.chatgpt.site",
   "https://localhost", "http://localhost", "capacitor://localhost", "http://127.0.0.1:5173",
-]);
+  // The public GreenBiz website. Other deployments are added with ALLOWED_ORIGINS.
+  "https://greenbizdemosite.sustgpt.com",
+];
+/** Browser origins that may call the service: the defaults plus ALLOWED_ORIGINS (comma-separated). */
+export function allowedOrigins(env: AiEnvironment): Set<string> {
+  const origins = new Set(DEFAULT_ORIGINS);
+  for (const entry of (env.ALLOWED_ORIGINS ?? "").split(",")) {
+    const value = entry.trim();
+    if (!value) continue;
+    try {
+      const url = new URL(value);
+      // Only bare http(s) origins; a path, query or credentials would never match a browser Origin.
+      if ((url.protocol === "https:" || url.protocol === "http:") && url.origin === value) origins.add(value);
+    } catch { /* Malformed entries are ignored rather than widening access. */ }
+  }
+  return origins;
+}
 const uuid = z.string().uuid().transform(s => s.toLowerCase());
 const secret = z.string().regex(/^[a-fA-F0-9]{64}$/).transform(s => s.toLowerCase());
 const short = z.string().trim().min(1).max(160);
@@ -240,7 +257,7 @@ async function chat(request: Request, env: AiEnvironment, db: AiDatabase, day: s
 export async function handleMobileAi(request: Request, env: AiEnvironment, deps: AiDependencies = {}): Promise<Response> {
   const origin = request.headers.get("origin");
   const headers = new Headers({ "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", Vary: "Origin" });
-  if (origin && !ORIGINS.has(origin)) return Response.json({ error: "Origin is not allowed." }, { status: 403, headers });
+  if (origin && !allowedOrigins(env).has(origin)) return Response.json({ error: "This website address is not allowed to use GreenBiz AI." }, { status: 403, headers });
   if (origin) headers.set("Access-Control-Allow-Origin", origin);
   headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, x-greenbiz-installation");

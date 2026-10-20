@@ -18,7 +18,7 @@ describe('versioned SQLite recovery', () => {
       try {
         expect(copy.prepare('PRAGMA integrity_check').get()).toEqual({ integrity_check: 'ok' });
         expect(copy.prepare('SELECT email FROM users').get()).toEqual({ email: 'user@example.com' });
-        expect(copy.prepare('SELECT version FROM migrations ORDER BY version').all()).toEqual([{ version: 1 }, { version: 2 }, { version: 3 }, { version: 4 }, { version: 5 }]);
+        expect(copy.prepare('SELECT version FROM migrations ORDER BY version').all()).toEqual([{ version: 1 }, { version: 2 }, { version: 3 }, { version: 4 }, { version: 5 }, { version: 6 }]);
       } finally { copy.close(); }
       await expect(backupDatabase(path, target)).rejects.toThrow(/exist/i);
       await expect(backupDatabase(path, path)).rejects.toThrow();

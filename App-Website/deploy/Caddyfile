@@ -1,5 +1,8 @@
 {$GREENBIZ_DOMAIN} {
     encode gzip
+    # /admin opens the admin panel (the app uses hash routes).
+    redir /admin /#/admin 302
+    redir /admin/ /#/admin 302
     handle /api/* {
         reverse_proxy api:8787
     }

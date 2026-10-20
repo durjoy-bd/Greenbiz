@@ -3,7 +3,7 @@
 > **Product:** GreenBiz — offline-first small-business app for shops in Bangladesh
 > **Clients:** Android app (Capacitor + React), responsive browser app, public invoice page, bank portal
 > **Backends:** optional cloud portal (Fastify + SQLite) and a managed AI service (Cloudflare Workers + D1)
-> **Version:** 2.2.0
+> **Version:** 2.4.0
 > **Last updated:** 2026-10-19
 > **Audience:** engineers, reviewers, and anyone evaluating the system's correctness, privacy, or security posture
 
@@ -767,9 +767,11 @@ The critical rules: **raw SMS never leaves the phone**, and **a bank user only e
 |---|---|---|---|
 | **Anonymous** | — | Health check, view one invoice by link, submit a TrxID claim for it | Read any other invoice, inventory, sales, owner email |
 | **Device owner** | Installs the app | Everything on their device shops | Reach any server or other device |
-| **Merchant** | Public registration | Their own shops' records, invoices, offers, interest, export, account deletion | Read other merchants; act as a bank; self-verify a payment |
-| **Bank** | **Created only by an administrator** with shell access (`server/admin.ts create-bank`) | List consenting shops' aggregate profiles; send offers and document requests; read interest in their own offers | See products, customers, SMS or transactions; see non-consenting shops; read other banks' interest |
-| **Administrator** | Shell / database access | Provision bank users, back up and restore | — (no admin HTTP route exists) |
+| **Merchant** (User role) | Public sign-up; the email address is confirmed from an emailed link | Their own shops' records, invoices, offers, interest, export, account deletion | Read other merchants; act as a bank; self-verify a payment |
+| **Bank** (User role) | **Invited by an administrator** from the admin panel (or created from the server shell); never by public sign-up | List consenting shops' aggregate profiles; send offers and document requests; read interest in their own offers | See products, customers, SMS or transactions; see non-consenting shops; read other banks' interest |
+| **Admin** | A Super Admin gives an account the role | Open the admin panel (password + authenticator code); see users, every shop's records and the activity log; edit, suspend, deactivate and sign out regular users; send confirmation and reset emails; invite bank users | Act on administrators, change roles, read the audit log or change settings |
+| **Super Admin** | The first is created from the server shell (`create-super-admin`); others by role change | Everything an Admin can do, plus role changes, two-step resets, account deletion, the audit log and server settings (SMTP, email confirmation, retention) | Demote, suspend or delete the last active Super Admin; change their own role or status |
+| **Server operator** | Shell access | Create or recover Super Admins, reset two-step verification, back up and restore | — |
 
 #### Android permissions
 
@@ -805,7 +807,12 @@ Further Android hardening:
 | Native transport | `x-greenbiz-client: native` → token returned once, then `Authorization: Bearer`; stored in the Keystore vault |
 | Cookie + native origin | A request from a Capacitor origin **cannot** authenticate with a cookie |
 | Account deletion | Requires the password again; cascades every owned record |
-| Password recovery | Returns `503` and says plainly that no email was sent (no mail service is configured) |
+| Email confirmation | New accounts confirm their address from an emailed link before the first sign-in (configurable); sign-up answers the same whether or not the address exists |
+| Password recovery | Single-use reset link by email, valid 30 minutes; administrators can send a link but never see or set a password. Without SMTP the server says plainly that no email was sent |
+| Sign-in lockout | Five wrong passwords for one email from one address lock that pair for 15 minutes; 50 from any address lock the email |
+| Roles | `User`, `Admin`, `Super Admin`, checked on the server for every admin request; public sign-up always creates a User and any role field is rejected |
+| Admin panel | Separate `greenbiz_admin` cookie (`HttpOnly`, `SameSite=Strict`, path `/api/admin`, at most 12 hours) plus an authenticator (TOTP) code, with ten recovery codes |
+| Audit trail | Every privileged action is recorded with before-and-after values, a required reason and the outcome, including refused attempts; the database rejects changes or deletions |
 
 #### Managed AI service
 
@@ -926,7 +933,9 @@ These are real gaps, not hypothetical ones.
 | **Anonymous AI enrollment** | Not device attestation. Someone can create many installations; the global cap bounds request count, not currency spend. Provider-side spending limits are needed. |
 | **In-memory portal rate limits** | Reset on restart and see the proxy IP behind a reverse proxy. An upstream per-client limiter is needed for scale. |
 | **Single-node SQLite portal** | No horizontal scaling or shared session store. Fine for a pilot, not for many concurrent shops. |
-| **No password recovery** | No mail service is configured; recovery honestly reports unavailable. |
+| **Admin secrets stored in plain text** | Authenticator secrets and a dashboard-saved SMTP password are not encrypted in the database. Protect the database file and backups like a password vault. |
+| **Public demo administrator** | The demo server has a password-only Super Admin for sharing. It must be switched to *Require two-step* (or removed) before real data is stored there. |
+| **Shop owners' app sign-in is password only** | Two-step verification protects the admin panel, not ordinary app sign-in. |
 | **Device data loss** | Uninstalling or clearing app data deletes device shops. Export exists; automatic backup import does not. |
 | **SMS permission policy** | `READ_SMS` / `RECEIVE_SMS` are restricted on Google Play and need a declaration or sideloading. |
 | **AI text can contain personal details** | Free-text questions and sale sentences go to OpenRouter as typed. Schemas are structural, not a PII detector. |
@@ -944,11 +953,11 @@ cd App-Website
 npm ci
 npm run lint                     # ESLint, zero warnings allowed
 npm run typecheck                # strict TypeScript
-npm test                         # 108 unit and API tests (Vitest)
+npm test                         # 158 unit and API tests (Vitest)
 npm run build                    # web bundle -> dist/
 npm run build:server             # API bundle -> server-dist/
 npx playwright install chromium
-npm run test:ui                  # 23 browser journeys (API must be running)
+npm run test:ui                  # 30 browser journeys (API must be running)
 
 # Local development: two terminals
 $env:PUBLIC_ORIGIN = 'http://127.0.0.1:5173'
@@ -964,7 +973,7 @@ cd android
 # Managed AI service
 cd Managed-AI-Service
 npm ci
-npm test                         # 24 tests (Node test runner)
+npm test                         # 25 tests (Node test runner)
 node node_modules/typescript/bin/tsc --noEmit
 npm run build
 ```
@@ -1037,7 +1046,9 @@ All routes are under `/api` and return JSON. Errors are `{ "error": "…" }`.
 | `GET` | `/api/auth/me` | Current user |
 | `POST` | `/api/auth/logout` · `/logout-all` | Revoke this session or all sessions |
 | `DELETE` | `/api/auth/account` | Password required; cascades |
-| `POST` | `/api/auth/forgot-password` | `503`, no email sent |
+| `POST` | `/api/auth/forgot-password` | Always `202`; emails a single-use reset link (30 minutes) |
+| `POST` | `/api/auth/verify-email` · `/reset-password` | Confirm an address; set a new password from a link |
+| `GET`/`POST` | `/api/auth/profile` · `/sessions` · `/password` · `/email` · `/avatar` | Profile, devices, password, email change and photo |
 
 #### Merchant
 
@@ -1091,24 +1102,27 @@ Full contracts: [`App-Website/docs/API.md`](App-Website/docs/API.md) and [`Manag
 
 ## 7. Testing strategy
 
-All counts below were produced by running the suites on 2026-10-19.
+All counts below were produced by running the suites on 2026-10-20.
 
 | Suite | What it covers | Tests |
 |---|---|---:|
 | `shared/domain.test.ts` | Atomic sales, stock, retries, request-ID reuse, rounding, Dhaka dates, 300–900 indicator, imports, tombstones, receipt linking, currencies | 27 |
+| `server/app.test.ts` | Auth, cookies, origin checks, sessions, ownership, idempotent sales, sync replay, invoices, claims, bank consent, offers, interest, account deletion, AI honesty | 27 |
+| `server/accounts.test.ts` | Sign-up, email confirmation, single-use expiring reset links, lockouts, profile and email changes, session lists, activity without secrets, migration of 2.3 administrators | 16 |
+| `server/admin.test.ts` | Two-step admin sign-in, role checks on every route, last Super Admin protection, suspension ending sessions, reset emails, dashboard numbers, append-only audit, settings | 16 |
+| `shared/sale-entry.test.ts` | Quantities, exact names, Bengali digits, refusing ambiguous matches | 17 |
+| `shared/loans.test.ts` | EMI and inverse, interest-only, rounding to thousands, 39-product catalogue, 50% ceiling, requested amounts | 15 |
 | `shared/sms.test.ts` | Amount vs balance, debit wording, Bengali digits, short codes, Upay, Bangla amounts, dedupe by reference | 14 |
-| `shared/loans.test.ts` | EMI and inverse, interest-only, rounding to thousands, 39-product catalogue, 50% ceiling, requested amounts | 13 |
 | `shared/credit-profile.test.ts` | Weights, empty shop, window, ৳20,000 reference, risk flags, business-only records | 6 |
 | `shared/tolerance.test.ts` | Exact, cash-out and distant amounts | 6 |
-| `shared/finance.test.ts` | Linked-sale cashflow, period comparison, borrowing estimate, calendar presets | 4 |
-| `shared/sale-entry.test.ts` | Quantities, exact names, Bengali digits, refusing ambiguous matches | 2 |
-| `server/app.test.ts` | Auth, cookies, origin checks, sessions, ownership, idempotent sales, sync replay, invoices, claims, bank consent, offers, interest, account deletion, AI honesty | 27 |
-| `server/store.test.ts` · `backup.test.ts` | Migration 4 preserves legacy data; live WAL backup | 2 |
+| `shared/finance.test.ts` | Linked-sale cashflow, period comparison, borrowing estimate, calendar presets | 5 |
+| `server/store.test.ts` · `backup.test.ts` | Migrations preserve legacy data; live WAL backup | 2 |
 | `src/data/*.test.ts` | Personal key isolation, aggregate-only advice, AI product-ID checks, managed enrollment, stable offline IDs | 7 |
-| **App unit + API total** | 13 files | **108** |
-| `tests/*.spec.ts` (Playwright) | Device persistence, multi-shop isolation, SMS linking, offline restart, exact-once replay, conflicts, expired sessions, public invoice claims, cash-out attach, loan directory, reports, phone widths | **23** |
-| `Managed-AI-Service/tests/mobile-ai.test.mjs` | Enrollment, auth, strict schemas, fixed provider request, redirects, request claims, concurrent quotas, UTC rollover, fail-closed config, timeouts, output validation, credential-echo rejection, real `workerd` transport | **24** |
+| **App unit + API total** | 15 files | **158** |
+| `tests/*.spec.ts` (Playwright) | Device persistence, multi-shop isolation, SMS linking, offline restart, exact-once replay, conflicts, expired sessions, public invoice claims, cash-out attach, loan directory, reports, sign-up with email confirmation, password reset, profile, the admin panel with two-step sign-in, phone widths | **30** |
+| `Managed-AI-Service/tests/mobile-ai.test.mjs` | Enrollment, auth, strict schemas, fixed provider request, redirects, request claims, concurrent quotas, UTC rollover, fail-closed config, timeouts, output validation, credential-echo rejection, real `workerd` transport | **25** |
 | `SmsPaymentParserTest.java` (JUnit) | Native parser: filtering, debits, digits, short codes, stable identity | **4** |
+| **Grand total** | | **217** |
 
 Test design choices:
 
@@ -1138,7 +1152,7 @@ See §4.12 for the full table. The highest-priority items before a real launch a
 2. **Provider-side spending limits** and monitoring for the managed AI key.
 3. **Upstream rate limiting** in front of the portal.
 4. **Release signing and Play SMS-permission declaration.**
-5. **Mail-backed password recovery.**
+5. **Configure email delivery (SMTP)** so confirmation and reset emails reach people.
 
 ---
 

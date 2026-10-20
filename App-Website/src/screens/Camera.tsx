@@ -32,13 +32,20 @@ export function StockCamera({
   async function capture() {
     await run(async () => {
       if (native) {
-        const p = await Camera.getPhoto({
-          quality: 75,
-          width: 1400,
-          resultType: CameraResultType.DataUrl,
-          source: CameraSource.Prompt,
-          correctOrientation: true,
-        });
+        let p;
+        try {
+          p = await Camera.getPhoto({
+            quality: 75,
+            width: 1400,
+            resultType: CameraResultType.DataUrl,
+            source: CameraSource.Prompt,
+            correctOrientation: true,
+          });
+        } catch (e) {
+          // Closing the camera or picker is a choice, not an error.
+          if (e instanceof Error && /cancel/i.test(e.message)) return;
+          throw e;
+        }
         setPhoto(p.dataUrl || '');
         setFound([]);
       } else file.current?.click();
@@ -46,6 +53,8 @@ export function StockCamera({
   }
   async function selectFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
+    // Cleared so choosing the same photo again still fires a change.
+    e.target.value = '';
     if (!f) return;
     await run(async () => {
       if (!['image/jpeg', 'image/png', 'image/webp'].includes(f.type) || f.size > 8 * 1024 * 1024)

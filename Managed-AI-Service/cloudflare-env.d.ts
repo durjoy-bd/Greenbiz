@@ -8,5 +8,6 @@ declare namespace Cloudflare {
     GLOBAL_DAILY_LIMIT?: string;
     DEVICE_DAILY_LIMIT?: string;
     IP_DAILY_LIMIT?: string;
+    ALLOWED_ORIGINS?: string;
   }
 }

@@ -36,11 +36,11 @@ Inventory  →  sale  →  payment SMS  →  linked receipt  →  credit profile
 | | |
 |---|---|
 | **Repository** | <https://github.com/durjoy-bd/Greenbiz> |
-| **Download the APK** | [Latest release — v2.3.0](https://github.com/durjoy-bd/Greenbiz/releases/latest) |
+| **Download the APK** | [Latest release — v2.4.0](https://github.com/durjoy-bd/Greenbiz/releases/latest) |
 | **Live web demo** | <https://greenbizdemosite.sustgpt.com> |
 | **Managed AI service** | <https://greenbiz-ai-service.dearjelly6.chatgpt.site> |
 | **Technical documentation** | [technicaldoc.md](technicaldoc.md) — architecture, core algorithms, security design |
-| **Project** | [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md) · [Admin console & deployment](App-Website/docs/ADMIN-2.3.md) |
+| **Project** | [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security policy](SECURITY.md) · [Accounts & admin panel](App-Website/docs/ACCOUNTS-2.4.md) · [Deployment](App-Website/deploy/vps/README.md) |
 
 ## What it does
 
@@ -87,14 +87,16 @@ the instalment stays under half of monthly revenue, and labels each as
 to GreenBiz's managed AI service. Users never enter a key or run a server. Every
 suggestion is a draft to review, and advice only ever sees totals.
 
-**Accounts and an admin console.** On a GreenBiz server, shop owners sign up and
-sign in from the website (or the app once the server has HTTPS), and their records
-sync across devices. Platform administrators get a separate console at `/#/admin`:
-platform totals and 30-day charts, every shop with its full stock, sales, payments
-and activity, account suspension, password resets, sign-out-everywhere, bank users
-and more administrators. Every administrator sign-in, record view, export and
-account change is written to an audit log, and shop owners are told at sign-up
-that administrators can see their records.
+**Accounts and an admin panel.** On a GreenBiz server, people sign up with their name
+and email, confirm the address from an emailed link, and can reset a forgotten password
+the same way. Each account has a profile page (photo, contact details, email change,
+password, and every signed-in device). Roles are User, Admin and Super Admin, enforced
+by the server. Administrators open the panel at `/admin` with an authenticator code and
+get a dashboard (registrations, confirmed accounts, daily and monthly active users), a
+searchable user table, a page per user with their shops, activity and administrative
+history, an activity log, and an append-only audit trail of every privileged action with
+its reason. Email (SMTP) and other settings can be changed from the panel. See
+[ACCOUNTS-2.4.md](App-Website/docs/ACCOUNTS-2.4.md).
 
 **Static website.** `npm run build` produces a folder that runs from any static
 host or sub-folder with no server: shops are saved in the browser. Served by a
@@ -113,8 +115,9 @@ self-recorded estimates, not bureau scores or loan approvals.
 | [`App-Website/android/`](App-Website/android/) | Android project, including the native SMS, Keystore and speech plugins |
 | [`Managed-AI-Service/`](Managed-AI-Service/) | The hosted AI service: Cloudflare Workers + D1, quotas and request validation |
 | [`technicaldoc.md`](technicaldoc.md) | Full technical documentation |
-| [`Presentation/`](Presentation/) | Presentation decks (PowerPoint) with speaker notes |
-| [`START-HERE.md`](START-HERE.md) | Short orientation to the two projects |
+| [`site/`](site/) | The project website, published at <https://durjoy-bd.github.io/Greenbiz/> |
+| [`Presentation/`](Presentation/) | The presentation deck (PowerPoint) with speaker notes |
+| [Releases](https://github.com/durjoy-bd/Greenbiz/releases/latest) | The Android APK, the demo video (1080p, with English captions), and the website and VPS bundles |
 | [`.github/workflows/`](.github/workflows/) | CI: lint, typecheck, tests, builds, browser journeys, Android build |
 
 More documentation:
@@ -126,6 +129,7 @@ More documentation:
 - [`App-Website/docs/VALIDATION.md`](App-Website/docs/VALIDATION.md) — recorded validation results
 - [`App-Website/docs/FEATURES-2.1.md`](App-Website/docs/FEATURES-2.1.md) — features restored from GreenBiz 1.x
 - [`App-Website/docs/MOTION-2.2.md`](App-Website/docs/MOTION-2.2.md) — 2.2 animations, transitions and haptics
+- [`App-Website/docs/ACCOUNTS-2.4.md`](App-Website/docs/ACCOUNTS-2.4.md) — 2.4 accounts, roles, two-step admin sign-in and email setup
 - [`Managed-AI-Service/README.md`](Managed-AI-Service/README.md) — AI service contracts and quotas
 
 ## Requirements
@@ -333,36 +337,38 @@ Run everything:
 cd App-Website
 npm run lint                  # ESLint, zero warnings
 npm run typecheck             # strict TypeScript
-npm test                      # 116 unit and API tests
+npm test                      # 158 unit and API tests
 npx playwright install chromium
-npm run test:ui               # 25 browser journeys (API from Quick start must be running;
-                              # set E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD for the 2 admin journeys)
+npm run test:ui               # 30 browser journeys (API from Quick start must be running;
+                              # set E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD for the admin journeys)
 cd android
 .\gradlew.bat testDebugUnitTest   # 4 native SMS parser tests
 
 cd ..\..\Managed-AI-Service
-npm test                      # 24 AI service tests
+npm test                      # 25 AI service tests
 ```
 
-Results on 2026-10-19 (v2.3.0): **169 tests, all passing**: 116 unit/API,
-25 browser journeys (including the admin console), 4 native SMS parser tests and
-24 AI service tests.
+Results on 2026-10-20 (v2.4.0): **217 tests, all passing** — 158 unit/API,
+30 browser journeys (including sign-up with email confirmation, password reset and
+the admin panel with two-step sign-in), 25 AI service tests and 4 native SMS parser
+tests.
 
 | Suite | Tests | What it proves |
 |---|---:|---|
-| `server/admin.test.ts` | 8 | Administrators are separate from shop owners; every shop is visible with full records; views and changes are audited; suspension, password reset, deletion confirmation, bank users, owner password change, HTTP only by explicit opt-in |
+| `server/accounts.test.ts` | 16 | Sign-up, email confirmation, sign-in and sign-out; duplicate addresses never create a second account; reset links are single-use and expire; five wrong passwords lock an address; profile edits persist; email changes need confirmation; sessions can be listed and ended; activity is recorded without secrets; 2.3 administrators migrate safely |
+| `server/admin.test.ts` | 16 | Two-step sign-in for the admin panel; regular users are refused on every admin route even when calling the server directly; Admins cannot touch administrators, roles or the audit log; the last Super Admin is protected; suspension ends every session; reset emails never expose a password; dashboard numbers match the database; audit records cannot be changed or deleted; settings apply at once without leaking the SMTP password |
 | `shared/domain.test.ts` | 27 | Sales are atomic; a retried sale never takes stock twice; reused request IDs are refused; money rounds exactly; dates use Dhaka time; receipts link only inside the cash-out band |
 | `shared/sms.test.ts` | 14 | The received amount is picked, never the balance; Bengali digits and Bangla wording parse; only exact short codes are trusted; the same payment imports once |
-| `shared/loans.test.ts` | 13 | EMI and its inverse are correct; suggested amounts stay under half of revenue and inside a real product band; the 39-product catalogue loads |
+| `shared/loans.test.ts` | 15 | EMI and its inverse are correct; suggested amounts stay under half of revenue and inside a real product band; the 39-product catalogue loads |
 | `shared/credit-profile.test.ts` | 6 | Weights are 30/25/25/20; volume scores against ৳20,000; risk flags fire; personal and foreign records are left out |
 | `shared/tolerance.test.ts` | 6 | Exact, cash-out and distant amounts are labelled correctly |
-| `shared/finance.test.ts` | 4 | Linked sales count once; periods compare correctly; calendar presets start weeks on Saturday |
-| `shared/sale-entry.test.ts` | 2 | Spoken or typed sales never invent a match or a quantity |
+| `shared/finance.test.ts` | 5 | Linked sales count once; periods compare correctly; calendar presets start weeks on Saturday |
+| `shared/sale-entry.test.ts` | 17 | Spoken or typed sales never invent a match or a quantity |
 | `server/app.test.ts` | 27 | Passwords and tokens are hashed; cookies are HttpOnly and SameSite; cross-origin writes are refused; shops are isolated; offline replay is exact-once; invoice claims cannot change the amount; banks see only consenting shops |
 | `server/store.test.ts`, `backup.test.ts` | 2 | Migrations preserve old data; a live database backs up consistently |
 | `src/data/*.test.ts` | 7 | Offline creates keep stable IDs; AI only receives aggregates; AI-suggested product IDs are checked |
-| `tests/*.spec.ts` (Playwright) | 23 | End-to-end in a real browser: device shop, multi-shop isolation, SMS-linked sale, offline restart, conflict handling, cash-out attach, loan directory, reports, phone-width layouts |
-| `Managed-AI-Service/tests` | 24 | Credentials are hashed; quotas hold under concurrency; a request is never sent twice; redirects and credential echoes are rejected; failures reveal nothing |
+| `tests/*.spec.ts` (Playwright) | 30 | End-to-end in a real browser: device shop, multi-shop isolation, SMS-linked sale, offline restart, conflict handling, cash-out attach, loan directory, reports, sign-up with email confirmation, return to the requested page after sign-in, profile edits surviving a reload, password reset, the admin panel (two-step sign-in, search, suspend with a reason, reset email, audit) and phone-width layouts |
+| `Managed-AI-Service/tests` | 25 | Credentials are hashed; quotas hold under concurrency; a request is never sent twice; redirects and credential echoes are rejected; failures reveal nothing |
 | `SmsPaymentParserTest.java` | 4 | The native Android parser matches the TypeScript rules |
 
 Every push runs the same checks on GitHub Actions.

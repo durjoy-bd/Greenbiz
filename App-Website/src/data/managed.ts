@@ -33,6 +33,11 @@ async function request<T>(path: string, body?: unknown, credential?: Installatio
     );
   }
   const json = await response.json().catch(() => ({}));
+  if (response.status === 403 && !native)
+    // The service accepts browsers only from the GreenBiz websites it has been told about.
+    throw new Error(
+      'GreenBiz AI is not enabled for this website address yet. Use the Android app, or ask your administrator to add this address to the AI service.',
+    );
   if (!response.ok)
     throw new Error(
       typeof json.error === 'string'

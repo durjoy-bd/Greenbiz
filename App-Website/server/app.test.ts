@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { buildApp } from './app';
 import { createBankAccount } from './admin';
+import { disabledMailer } from './mailer';
 import { dashboard } from '../shared/domain';
 import type { FastifyInstance } from 'fastify';
 
@@ -16,7 +17,8 @@ const dirs: string[] = [];
 async function setup(options: Record<string, unknown> = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'greenbiz-test-')); dirs.push(dir);
   const dbPath = join(dir, 'test.sqlite');
-  const app = await buildApp({ dbPath, publicOrigin: origin, ...options }); apps.push(app);
+  // These tests cover shop records, so sign-up skips email confirmation (accounts.test.ts covers it).
+  const app = await buildApp({ dbPath, publicOrigin: origin, requireEmailVerification: false, mailer: disabledMailer, ...options }); apps.push(app);
   await app.ready();
   return { app, dbPath };
 }

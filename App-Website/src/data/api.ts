@@ -17,6 +17,10 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
+    /** A stable reason from the server, such as "email_unverified". */
+    public code = '',
+    /** Field-by-field validation messages, keyed by field name. */
+    public fields: Record<string, string> = {},
   ) {
     super(message);
   }
@@ -84,6 +88,6 @@ export async function api<T>(
     .json()
     .catch(() => ({ error: 'The server returned an unreadable response.' }));
   if (!response.ok)
-    throw new ApiError(json.error || 'Unable to complete this request.', response.status);
+    throw new ApiError(json.error || 'Unable to complete this request.', response.status, json.code, json.fields);
   return json as T;
 }

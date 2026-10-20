@@ -4,7 +4,7 @@ An Android small-business app based on the supplied Puji designs, renamed GreenB
 
 ## Try the Android app
 
-The delivered `GreenBiz-2.3.0.apk` is an installable **internal/testing build**, signed with the local Android debug certificate. Transfer it to your Android phone, open it, and allow installation from that file source if Android asks. It requires Android 6.0 or newer and a current Android System WebView. It has not been installed on your personal phone as part of this build.
+The delivered `GreenBiz-2.4.0.apk` is an installable **internal/testing build**, preset to the demo server `https://greenbizdemosite.sustgpt.com`. It installs as an update over 2.3 and keeps on-device data. It is signed with the local Android debug certificate. Transfer it to your Android phone, open it, and allow installation from that file source if Android asks. It requires Android 6.0 or newer and a current Android System WebView. It has not been installed on your personal phone as part of this build.
 
 - **Create my shop:** an empty, real shop whose stock, sales, payment reviews and settings persist in this app’s private device storage. No account or internet is needed for these tools. Export backups from Settings; uninstalling/clearing app data removes the device shop.
 - **Explore sample shop:** separate fictional reference records. Nothing in this mode verifies a payment, contacts a lender, or changes your own shop.
@@ -13,6 +13,8 @@ The delivered `GreenBiz-2.3.0.apk` is an installable **internal/testing build**,
 The UI supports Bengali text and the taka sign with bundled fonts. Interface copy is currently English; a full Bengali translation is not implemented.
 
 ## What works
+
+New in 2.4: email-confirmed accounts with password-reset links, a profile and account page (photo, email change, active sessions), User / Admin / Super Admin roles enforced by the server, an admin panel at `/admin` with two-step verification, a user dashboard, searchable user management, a per-user page, an activity log and an append-only audit trail, and email settings editable from the panel. See [2.4 accounts & admin panel](docs/ACCOUNTS-2.4.md).
 
 New in 2.3: shop-owner accounts on your own server, a separate administrator console (`/#/admin`) with every shop's full records, account controls and an audit log, a static website build that runs from any host, and a one-command VPS deployment. See [2.3 admin & deployment](docs/ADMIN-2.3.md) and [deploy/vps](deploy/vps/README.md).
 

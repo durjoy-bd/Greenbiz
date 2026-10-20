@@ -24,6 +24,6 @@ Only the latest release receives security fixes.
 ## Operating a server
 
 - Serve GreenBiz over **HTTPS** before inviting real shop owners. `ALLOW_INSECURE_HTTP` exists only for IP-based testing.
-- Create the first administrator on the server (`node server/admin.js create-admin`), then change its password in the admin console.
+- Create the first Super Admin on the server (`node server/admin.js create-super-admin`, password in the environment), then set up two-step verification at `/admin`. Never use `--demo` on a server with real data.
 - Keep `AUTH_RATE_LIMIT_MAX` at its default (10) in production.
 - Copy backups off the server; see `App-Website/deploy/vps/README.md`.

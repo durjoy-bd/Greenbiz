@@ -1,18 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
+import { registerVerified } from './support';
 async function connected(page: Page, label: string) {
-  const r = await page.request.post('/api/auth/register', {
-    headers: { Origin: `http://127.0.0.1:${process.env.GREENBIZ_DEV_PORT ?? 5173}` },
-    data: {
-      email: `${label.toLowerCase().replace(/\s/g, '')}-${Date.now()}@example.test`,
-      password: 'Session-Test-9182',
-      shopName: label,
-      owner: '',
-      location: '',
-      phone: '',
-      bkash: '',
-    },
-  });
-  expect(r.ok()).toBe(true);
+  await registerVerified(page.request, { email: `${label.toLowerCase().replace(/\s/g, '')}-${Date.now()}@example.test`, password: 'Session-Test-9182', shopName: label });
   await page.goto('/');
   await page.evaluate(() => localStorage.setItem('greenbiz-mode', 'server'));
   await page.reload();

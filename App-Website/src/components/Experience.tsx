@@ -105,7 +105,8 @@ export function AppExperience() {
 
 /** Eased count from the previous value. Presentation only: saved values never depend on it. */
 export function useCountUp(value: number, duration = 520) {
-  const [shown, setShown] = useState(value),
+  // Start where the animation starts, so the final value never flashes before counting up.
+  const [shown, setShown] = useState(() => (reducedMotion() ? value : 0)),
     previous = useRef<number | null>(null);
   useEffect(() => {
     // First render counts up from zero; later changes count from the last value.

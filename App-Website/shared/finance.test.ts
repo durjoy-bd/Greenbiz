@@ -104,3 +104,7 @@ it('builds calendar presets in business time and the 1.x overview figures', () =
   expect(year.bucket).toBe('month');
   expect(year.buckets.find((b) => b.key === '2026-10')).toMatchObject({ income: 600, count: 3 });
 });
+it('treats a future picked month as this month rather than an impossible range', () => {
+  const now = new Date('2026-10-19T04:00:00Z');
+  expect(presetDates('pickMonth', now, '2026-12')).toMatchObject({ from: '2026-10-01', to: '2026-10-19' });
+});

@@ -1,6 +1,6 @@
-import { cloneElement, isValidElement, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { cloneElement, isValidElement, useId, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, Clock, Copy, X, Leaf, ChevronLeft, Plus, Minus, Inbox } from 'lucide-react';
+import { Check, Clock, Copy, X, Leaf, ChevronLeft, Plus, Minus, Inbox, Eye, EyeOff } from 'lucide-react';
 import type { PaymentStatus } from '../../shared/types';
 export function Logo({ small = false, invert = false }: { small?: boolean; invert?: boolean }) {
   return (
@@ -204,23 +204,90 @@ export function Field({
   label,
   children,
   hint,
+  error,
+  required = false,
+  optional = false,
 }: {
   label: string;
   children: ReactNode;
   hint?: string;
+  /** Shown under the field and announced; also marks the control invalid. */
+  error?: string;
+  /** Adds a visible required marker (pair it with the input's own required attribute). */
+  required?: boolean;
+  /** Adds "(optional)" after the label. */
+  optional?: boolean;
 }) {
-  const control =
-    isValidElement<{ 'aria-label'?: string }>(children) && children.type === 'select'
-      ? cloneElement(children, { 'aria-label': children.props['aria-label'] || label })
-      : children;
+  const id = useId();
+  const described = [hint ? id + '-hint' : '', error ? id + '-error' : ''].filter(Boolean).join(' ') || undefined;
+  // A password box carries its own show/hide button, which must not become part of the label.
+  const separate = isValidElement(children) && children.type === PasswordInput;
+  const control = isValidElement<{ id?: string; 'aria-label'?: string; 'aria-invalid'?: boolean; 'aria-describedby'?: string }>(children)
+    ? cloneElement(children, {
+        ...(children.type === 'select' ? { 'aria-label': children.props['aria-label'] || label } : {}),
+        ...(separate ? { id: id + '-control' } : {}),
+        ...(error ? { 'aria-invalid': true } : {}),
+        ...(described ? { 'aria-describedby': described } : {}),
+      })
+    : children;
+  // The required asterisk is drawn by CSS so it is not read aloud or made part of the label.
+  const text = (
+    <span className={required ? 'req-label' : undefined}>
+      {label}
+      {optional && <span className="opt"> (optional)</span>}
+    </span>
+  );
   return (
-    <div className="field">
-      <label>
-        <span>{label}</span>
-        {control}
-      </label>
-      {hint && <small>{hint}</small>}
+    <div className={'field' + (error ? ' has-error' : '')}>
+      {separate ? (
+        <>
+          <label htmlFor={id + '-control'}>{text}</label>
+          {control}
+        </>
+      ) : (
+        <label>
+          {text}
+          {control}
+        </label>
+      )}
+      {hint && <small id={id + '-hint'}>{hint}</small>}
+      {error && (
+        <small className="field-error" id={id + '-error'} role="alert">
+          {error}
+        </small>
+      )}
     </div>
+  );
+}
+/** A password box with a show/hide button. Props go to the <input>. */
+export function PasswordInput(props: Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>) {
+  const [shown, setShown] = useState(false);
+  return (
+    <span className="password-input">
+      <input {...props} type={shown ? 'text' : 'password'} spellCheck={false} autoCapitalize="off" />
+      <button type="button" className="reveal" aria-label={shown ? 'Hide password' : 'Show password'} aria-pressed={shown} onClick={() => setShown(!shown)}>
+        {shown ? <EyeOff size={18} /> : <Eye size={18} />}
+      </button>
+    </span>
+  );
+}
+/** A profile photo, or the person's initials on a tinted circle. */
+export function Avatar({ name, email, src, size = 40 }: { name?: string; email?: string; src?: string | null; size?: number }) {
+  const label = (name || email || '?').trim();
+  const initials =
+    label
+      .split(/[\s@._-]+/)
+      .filter(Boolean)
+      .map((part) => part[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || '?';
+  return src ? (
+    <img className="user-avatar" src={src} alt="" width={size} height={size} style={{ width: size, height: size }} />
+  ) : (
+    <span className="user-avatar initials" aria-hidden="true" style={{ width: size, height: size, fontSize: Math.round(size * 0.38) }}>
+      {initials}
+    </span>
   );
 }
 export function Meter({ value }: { value: number | null }) {

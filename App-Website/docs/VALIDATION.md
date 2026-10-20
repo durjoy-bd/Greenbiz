@@ -70,3 +70,14 @@ Accounts, admin console, static website and VPS deployment; see [ADMIN-2.3.md](A
 - Deployed to the shared VPS as two Docker containers on port 8790 (API 256 MB and web 128 MB caps; about 32 MB and 44 MB in use). Health, website and admin sign-in verified over the public internet. A real browser over plain HTTP opened a device shop and the admin console with no console errors. A verified backup was taken and a nightly backup job installed. No existing site, nginx configuration or port-80/443 forwarding was changed; only firewall port 8790 was opened.
 - `gradlew assembleDebug testDebugUnitTest` succeeded; 4 native parser tests passed. APK `GreenBiz-2.3.0.apk`: versionCode 5, versionName 2.3.0, debug-signed. SHA-256 `d502e8531cd01f9367c78d46352e8f1cd7d1cb51668ba3478d2c685e55ff57d6`.
 - Not done: HTTPS (no domain yet), so the deployment is for testing. The Android app cannot sign in to an HTTP server. No physical-device test.
+
+## GreenBiz 2.4.0 (20 October 2026)
+
+Accounts, roles, the admin panel, activity tracking and the audit trail; see [ACCOUNTS-2.4.md](ACCOUNTS-2.4.md).
+
+- Lint, typecheck, web build, server bundle and `npm audit --audit-level=high` (0 vulnerabilities) succeeded.
+- `npm test`: 139 unit/API tests passed, including 15 account tests and 16 admin tests.
+- 30 browser journeys passed against a real API with the development email outbox. They found three interface bugs, all fixed: the show/hide button was read as part of the password label, the eye icon jumped when pressed, and the welcome buttons could swap under a tap.
+- Deployed to greenbizdemosite.sustgpt.com after a verified database backup (the database was empty). Migrations 5 and 6 ran on start. A demo Super Admin was created with `create-super-admin --demo` at the owner's request. Admin sign-in, dashboard, users and settings were checked in a real browser over HTTPS, and the Android app's request pattern (native origin, bearer token: sign-up, profile, sessions, shop records, account deletion) was checked against the live server with a throwaway account that was then deleted.
+- `gradlew testDebugUnitTest assembleDebug` succeeded; 4 native parser tests passed. APK `GreenBiz-2.4.0.apk`: versionCode 6, versionName 2.4.0, debug-signed with the same certificate as 2.3 (SHA-256 `d6eba623…0809`), preset to the demo server. SHA-256 of the APK `160ef81782a2521f31232c225665b5e14bc6e3ccbaa03a050460219fb3a8e247`.
+- Not done: no emulator or phone was available, so the APK was not installed on a device. Email delivery on the demo server is not configured yet, so email confirmation is switched off there.

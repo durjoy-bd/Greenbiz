@@ -8,7 +8,7 @@ Thanks for helping. This guide covers setup, checks and releases.
 | --- | --- |
 | `App-Website/` | Android app, website, admin console, API server, deployment kit and tests |
 | `Managed-AI-Service/` | The hosted AI service the app uses with no key |
-| `Presentation/` | Pitch decks and notes |
+| `Presentation/` | The presentation deck and speaker notes |
 
 ## Setup
 

@@ -1,3 +1,4 @@
+import type { AccessRole } from './permissions';
 export type Mode = 'device' | 'demo' | 'server';
 export type PaymentMethod = 'cash' | 'bkash' | 'nagad' | 'rocket' | 'upay' | 'upi' | 'bank' | 'other';
 export interface FinancialTransaction { id: string; amount: number; direction: 'in' | 'out'; method: PaymentMethod; reference: string; party: string; occurredAt: string; business: boolean; source: 'sms' | 'manual'; note: string; linkedSaleId?: string; currency?: 'BDT' | 'INR'; }
@@ -19,7 +20,8 @@ export type Action =
  | { type: 'payment.create'; id?: string; customer: string; order: string; channel: string; amount: number; trxId: string; requestId: string }
  | { type: 'payment.review'; id: string; decision: 'manual' | 'rejected'; received?: number; note: string }
  | { type: 'shop.update'; shop: Partial<Omit<Shop, 'createdAt'>> };
-export interface User { id: string; email: string; role: 'merchant' | 'bank'; }
+/** role is the account type (shop owner or bank user); accessRole is the permission level. */
+export interface User { id: string; email: string; role: 'merchant' | 'bank'; name?: string; accessRole?: AccessRole; emailVerified?: boolean; }
 export interface Session { user: User; token?: string; }
 export interface Score { value: number | null; label: string; days: number; digital: number; consistency: number; turnover: number; reasons: {title: string; detail: string; value: string; good: boolean}[]; }
 export interface Dashboard { todaySales: number; todayCount: number; cash: number; bkash: number; stockValue: number; totalProducts: number; lowProducts: Product[]; reviewPayments: Payment[]; monthSales: number; monthCount: number; profit: number; digital: number; daily: {date: string; value: number}[]; }

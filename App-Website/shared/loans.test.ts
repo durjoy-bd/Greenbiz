@@ -67,3 +67,22 @@ describe('published product matching', () => {
     expect(result.ranked.some((m) => m.warnings.some((w) => w.startsWith('This product lends')))).toBe(true);
   });
 });
+
+describe('honest sizing for small revenue', () => {
+  it('never presents a product minimum as an affordable headline amount', () => {
+    const tiny = matchPlans({ monthlyRevenue: 1, shopAgeMonths: 0 });
+    expect(tiny.capacity.basis).toBe('insufficient_revenue');
+    expect(tiny.capacity.suggestedAmount).toBe(0);
+    const entry = tiny.ranked.find((m) => m.entryAmount && m.suggestedAmount);
+    expect(entry).toBeDefined();
+    expect(entry!.priority).not.toBe('high');
+    expect(entry!.reasons.join(' ')).toMatch(/starts at/);
+    expect(entry!.reasons.join(' ')).not.toMatch(/this plan supports about/);
+  });
+  it('sizes the headline from revenue even when an amount is requested', () => {
+    const plain = matchPlans({ monthlyRevenue: 50_000, shopAgeMonths: 36 });
+    const asked = matchPlans({ monthlyRevenue: 50_000, shopAgeMonths: 36, requestedAmount: 50_000_000 });
+    expect(asked.capacity.suggestedAmount).toBe(plain.capacity.suggestedAmount);
+    expect(plain.ranked.filter((m) => !m.entryAmount && m.priority === 'high').length).toBeGreaterThan(0);
+  });
+});
