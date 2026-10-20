@@ -187,7 +187,12 @@ test('an uncached offline branch never renders or copies the previous branch set
   await expect(page.getByRole('heading', { name: 'Let’s reconnect' })).toBeVisible();
   await expect(page.getByLabel('Phone number', { exact: true })).toHaveCount(0);
   offline = false;
-  await page.getByRole('button', { name: 'Try again', exact: true }).click();
+  // With the network back, a pending request can reopen the branch before the click lands;
+  // either way the reconnect screen must be gone and the branch's own settings must load.
+  const retry = page.getByRole('button', { name: 'Try again', exact: true });
+  await retry.click({ timeout: 5000 }).catch(async () => {
+    await expect(retry).toHaveCount(0);
+  });
   await page.goto('/#/settings');
   await expect(page.getByLabel('Phone number', { exact: true })).toHaveValue('01822222222');
   await page.getByRole('button', { name: 'Save details', exact: true }).click();
