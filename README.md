@@ -1,8 +1,28 @@
-# GreenBiz — Small Business Copilot for Bangladesh
+<div align="center">
+
+<img src="site/assets/logo.svg" width="84" alt="GreenBiz logo">
+
+# GreenBiz
+
+**The business copilot for small shops in Bangladesh**
+
+Stock · sales · bKash & Nagad matching · reports · credit profile · bank loans — offline-first
 
 [![GreenBiz checks](https://github.com/durjoy-bd/Greenbiz/actions/workflows/app-ci.yml/badge.svg)](https://github.com/durjoy-bd/Greenbiz/actions/workflows/app-ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/durjoy-bd/Greenbiz?label=release&color=0e5a43)](https://github.com/durjoy-bd/Greenbiz/releases/latest)
+[![Platform: Android](https://img.shields.io/badge/platform-Android%206.0%2B-0e5a43?logo=android&logoColor=white)](https://github.com/durjoy-bd/Greenbiz/releases/latest)
+[![Offline first](https://img.shields.io/badge/offline-first-0a4433)](technicaldoc.md#23-operating-modes)
 [![License: MIT](https://img.shields.io/badge/license-MIT-f2a53a)](LICENSE)
+
+**[Website](https://durjoy-bd.github.io/Greenbiz/)** &nbsp;·&nbsp; **[Download APK](https://github.com/durjoy-bd/Greenbiz/releases/latest)** &nbsp;·&nbsp; **[Live demo](https://greenbizdemosite.sustgpt.com)** &nbsp;·&nbsp; **[Technical docs](technicaldoc.md)**
+
+<img src="site/assets/screens/desktop.png" width="860" alt="GreenBiz shop dashboard with sales, payments to check, stock running low and credit score">
+
+<img src="site/assets/screens/home.png" width="19%" alt="Home screen"> <img src="site/assets/screens/payment-match.png" width="19%" alt="Mobile money payment matching"> <img src="site/assets/screens/reports.png" width="19%" alt="Business reports"> <img src="site/assets/screens/credit.png" width="19%" alt="Credit profile"> <img src="site/assets/screens/ai-advice.png" width="19%" alt="AI advisor">
+
+</div>
+
+---
 
 An Android app for small shop owners in Bangladesh. It manages inventory and
 sales, turns mobile-money SMS (bKash, Nagad, Rocket, Upay) into structured
